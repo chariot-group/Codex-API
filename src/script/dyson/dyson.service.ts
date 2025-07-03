@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { writeFile } from 'fs/promises';
-import { Monster } from 'src/common/models/dnd-monsters';
-import { Spell } from 'src/common/models/dnd-spell';
+import { Monster } from '@/common/models/dnd-monsters';
+import { Spell } from '@/common/models/dnd-spell';
 
 @Injectable()
 export class DysonService {
     readonly SERVICE_NAME = this.constructor.name;
-    readonly BASE_URL = 'https://www.dnd5eapi.co/api';
+    readonly BASE_URL = process.env.DND_API_URL;
 
     delay(ms: number) {
         return new Promise(resolve => setTimeout(resolve, ms));

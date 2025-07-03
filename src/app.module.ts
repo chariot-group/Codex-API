@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
+import { AppController } from "@/app.controller";
+import { AppService } from "@/app.service";
 import { MongooseModule } from "@nestjs/mongoose";
 import { ConfigModule } from '@nestjs/config';
-import { DysonModule } from "./script/dyson/dyson.module";
+import { DysonModule } from "@/script/dyson/dyson.module";
 
 @Module({
   imports: [

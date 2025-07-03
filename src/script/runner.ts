@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
-import { AppModule } from 'src/app.module';
-import { DysonService } from './dyson/dyson.service';
+import { AppModule } from '@/app.module';
+import { DysonService } from '@/script/dyson/dyson.service';
 
 const getArgs = (args: string[]) =>
   process.argv.reduce((args, arg) => {
