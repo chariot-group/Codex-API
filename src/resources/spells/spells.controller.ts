@@ -26,6 +26,15 @@ export class SpellsController {
     }
   }
 
+  private async validateResourceByLabel(label: string): Promise<void> {
+    const spell = await this.spellModel.findOne({ name: label }).exec();
+
+    if (!spell) {
+      const message = `Spell ${label} not found`;
+      throw new NotFoundException(message);
+    }
+  }
+
   @Get()
   findAll(
     @Query('page', ParseNullableIntPipe) page?: number,
@@ -43,11 +52,16 @@ export class SpellsController {
   }
 
   @Get(':id')
-  async findOneById(@Param('id') id: string) {
-    if (Types.ObjectId.isValid(id)) {
-      let parseId: Types.ObjectId = new Types.ObjectId(id);
-      return this.spellsService.findOneById(parseId);
-    }
-    return this.spellsService.findOneByLabel(id);
+  async findOneById(@Param('id', ParseMongoIdPipe) id: Types.ObjectId) {
+    await this.validateResource(id);
+
+    return this.spellsService.findOneById(id);
+  }
+
+  @Get('/label/:label')
+  async findOneByLabel(@Param('label') label: string) {
+    await this.validateResourceByLabel(label);
+    
+    return this.spellsService.findOneByLabel(label);
   }
 }
