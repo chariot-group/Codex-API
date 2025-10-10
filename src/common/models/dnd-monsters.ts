@@ -2,7 +2,7 @@ export interface Monster {
   index: string;
   name: string;
   desc?: string;
-  size: 'Tiny' | 'Small' | 'Medium' | 'Large' | 'Huge' | 'Gargantuan';
+  size: "Tiny" | "Small" | "Medium" | "Large" | "Huge" | "Gargantuan";
   type: string;
   subtype?: string;
   alignment: string;
@@ -38,7 +38,7 @@ export interface Monster {
 }
 
 export interface ArmorClass {
-  type: 'dex' | 'natural' | string;
+  type: "dex" | "natural" | string;
   value: number;
 }
 
@@ -92,7 +92,7 @@ export interface MonsterAction {
   attack_bonus?: number;
   dc?: DifficultyClass;
   damage?: DamageComponent[];
-  multiattack_type?: 'actions';
+  multiattack_type?: "actions";
   actions?: SubAction[];
   usage?: Usage;
 }
@@ -100,17 +100,17 @@ export interface MonsterAction {
 export interface SubAction {
   action_name: string;
   count: string;
-  type: 'melee' | 'ranged' | 'ability' | string;
+  type: "melee" | "ranged" | "ability" | string;
 }
 
 export interface DifficultyClass {
   dc_type: APIReference;
   dc_value: number;
-  success_type: 'none' | 'half' | 'other'; // selon les cas rencontrés
+  success_type: "none" | "half" | "other"; // selon les cas rencontrés
 }
 
 export interface Usage {
-  type: 'per day' | 'recharge on roll' | 'recharge after rest' | string;
+  type: "per day" | "recharge on roll" | "recharge after rest" | string;
   times?: number;
   rest_types?: string[];
   dice?: string;

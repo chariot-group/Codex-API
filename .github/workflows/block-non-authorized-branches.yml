@@ -1,6 +1,6 @@
 # This GitHub Actions workflow is a template designed to block pull requests (PRs) that originate from unauthorized source branches.
 # It is intended to be used with `workflow_call` so it can be reused across multiple repositories or workflows.
-# 
+#
 # Inputs:
 #   - source_branch: The only branch allowed to create PRs to the target branch.
 #   - target_branch: The branch that should only accept PRs from the specified source branch.

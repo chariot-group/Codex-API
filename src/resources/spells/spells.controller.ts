@@ -10,8 +10,8 @@ import { ParseMongoIdPipe } from "@/common/pipes/parse-mong-id.pipe";
 export class SpellsController {
   constructor(
     private readonly spellsService: SpellsService,
-  @InjectModel(Spell.name) private spellModel: Model<Spell>,
-) {}
+    @InjectModel(Spell.name) private spellModel: Model<Spell>,
+  ) {}
 
   private async validateResource(id: Types.ObjectId): Promise<void> {
     if (!Types.ObjectId.isValid(id)) {
@@ -27,7 +27,9 @@ export class SpellsController {
   }
 
   private async validateResourceByName(name: string): Promise<void> {
-    const spell = await this.spellModel.findOne({ name: { $regex: `${decodeURIComponent(name)}`, $options: 'i' } }).exec();
+    const spell = await this.spellModel
+      .findOne({ name: { $regex: `${decodeURIComponent(name)}`, $options: "i" } })
+      .exec();
 
     if (!spell) {
       const message = `Spell ${name} not found`;
@@ -37,31 +39,30 @@ export class SpellsController {
 
   @Get()
   findAll(
-    @Query('page', ParseNullableIntPipe) page?: number,
-    @Query('offset', ParseNullableIntPipe) offset?: number,
-    @Query('sort') sort?: string,
-    @Query('name') name?: string) {
-
+    @Query("page", ParseNullableIntPipe) page?: number,
+    @Query("offset", ParseNullableIntPipe) offset?: number,
+    @Query("sort") sort?: string,
+    @Query("name") name?: string,
+  ) {
     return this.spellsService.findAll({
       page,
       offset,
       sort,
-      name
+      name,
     });
-
   }
 
-  @Get(':id')
-  async findOneById(@Param('id', ParseMongoIdPipe) id: Types.ObjectId) {
+  @Get(":id")
+  async findOneById(@Param("id", ParseMongoIdPipe) id: Types.ObjectId) {
     await this.validateResource(id);
 
     return this.spellsService.findOneById(id);
   }
 
-  @Get('/name/:name')
-  async findOneByName(@Param('name') name: string) {
+  @Get("/name/:name")
+  async findOneByName(@Param("name") name: string) {
     await this.validateResourceByName(name);
-    
+
     return this.spellsService.findOneByName(name);
   }
 }

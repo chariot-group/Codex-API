@@ -1,23 +1,21 @@
-import { createLogger, format, transports } from 'winston';
+import { createLogger, format, transports } from "winston";
 
 // custom log display format
-const customFormat = format.printf(
-  ({ timestamp, level, stack, message, context }) => {
-    return `${timestamp} - ${level}: [${context}] ${message || stack}`;
-  },
-);
+const customFormat = format.printf(({ timestamp, level, stack, message, context }) => {
+  return `${timestamp} - ${level}: [${context}] ${message || stack}`;
+});
 
 const options = {
   errorFile: {
-    filename: 'logger/logs/error.log',
-    level: 'error',
+    filename: "logger/logs/error.log",
+    level: "error",
   },
   combineFile: {
-    filename: 'logger/logs/combine.log',
-    level: 'info',
+    filename: "logger/logs/combine.log",
+    level: "info",
   },
   console: {
-    level: 'silly',
+    level: "silly",
   },
 };
 
@@ -25,7 +23,7 @@ const options = {
 const devLogger = {
   format: format.combine(
     format.timestamp({
-      format: 'YYYY-MM-DD hh:mm:ss.SSS A',
+      format: "YYYY-MM-DD hh:mm:ss.SSS A",
     }),
     format.colorize({ all: true }),
     format.align(),
@@ -39,19 +37,15 @@ const devLogger = {
 const prodLogger = {
   format: format.combine(
     format.timestamp({
-      format: 'YYYY-MM-DD hh:mm:ss.SSS A',
+      format: "YYYY-MM-DD hh:mm:ss.SSS A",
     }),
     format.errors({ stack: true }),
     format.json(),
   ),
-  transports: [
-    new transports.File(options.errorFile),
-    new transports.File(options.combineFile),
-  ],
+  transports: [new transports.File(options.errorFile), new transports.File(options.combineFile)],
 };
 
 // export log instance based on the current environment
-const instanceLogger =
-  process.env.ENV === 'production' ? prodLogger : devLogger;
+const instanceLogger = process.env.ENV === "production" ? prodLogger : devLogger;
 
 export const instance = createLogger(instanceLogger);
