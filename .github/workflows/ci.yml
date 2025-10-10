@@ -20,8 +20,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Clear npm cache
+        run: npm cache clean --force
+
       - name: Setup Node.js for ${{ matrix.project }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: "npm"
