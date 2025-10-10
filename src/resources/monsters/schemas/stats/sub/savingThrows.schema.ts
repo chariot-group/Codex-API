@@ -1,6 +1,6 @@
-import { Prop, SchemaFactory } from '@nestjs/mongoose';
+import { Prop, SchemaFactory } from "@nestjs/mongoose";
 
-import { Schema } from '@nestjs/mongoose';
+import { Schema } from "@nestjs/mongoose";
 @Schema({ _id: false })
 export class SavingThrows {
   @Prop({ default: 0 })
