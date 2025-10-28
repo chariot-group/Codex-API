@@ -3,7 +3,7 @@ import { Spell } from "@/resources/spells/schemas/spell.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import { IResponse, IPaginatedResponse } from "@/common/dtos/reponse.dto";
-import { PaginationSpell } from "@/resources/spells/dto/pagination-spell.dto";
+import { PaginationSpell } from "@/resources/spells/dto/find-all.dto";
 
 @Injectable()
 export class SpellsService {
@@ -14,29 +14,96 @@ export class SpellsService {
 
   async findAll(paginationSpell: PaginationSpell) : Promise<IPaginatedResponse<Spell[]>> {
     try {
-      const { page = 1, offset = 10, name = "" } = paginationSpell;
-      const skip: number = (page - 1) * offset;
+      const { page = 1, offset = 10, name = "", lang = "" } = paginationSpell;
+      const skip = (page - 1) * offset;
 
-      const filters = {
-        name: { $regex: `${decodeURIComponent(name)}`, $options: "i" },
+      const filters: any = {};
+      let projection: any = {
+        tag: 1,
+        languages: 1,
+        deletedAt: 1,
+        createdAt: 1,
+        updatedAt: 1,
       };
 
-      const sort: { [key: string]: 1 | -1 } = { updatedAt: -1 };
+      if (name.length > 0) {
+        const decodedName = decodeURIComponent(name);
+        if (lang.length > 0) {
+          filters[`translations.${lang}.name`] = { $regex: decodedName, $options: "i" };
+          projection = {
+            ...projection,
+            [`translations.${lang}`]: 1,
+          };
+        } else {
+          // Filter by name on all available languages dynamically
+          // First, get all distinct languages from the collection
+          const languages = await this.spellModel.distinct("languages");
+          // Build $or filter for all languages
+          filters["$or"] = languages.map(language => ({
+            [`translations.${language}.name`]: { $regex: decodedName, $options: "i" }
+          }));
 
-      if (paginationSpell.sort) {
-        paginationSpell.sort.startsWith("-") ? (sort[paginationSpell.sort.substring(1)] = -1) : (sort[paginationSpell.sort] = 1);
+          // Projection: include only translations matching the filter
+          // Since MongoDB projection can't filter array elements by condition easily,
+          // we will project all translations but filter in-memory after querying
+          projection = {
+            ...projection,
+            translations: 1,
+          };
+        }
+      } else {
+        if (lang.length > 0) {
+          projection = {
+            ...projection,
+            [`translations.${lang}`]: 1,
+          };
+        } else {
+          projection = {
+            ...projection,
+            translations: 1,
+          };
+        }
       }
 
-      const totalItems: number = await this.spellModel.countDocuments(filters);
+      // Tri par défaut (tag desc)
+      const sort: { [key: string]: 1 | -1 } = { tag: -1 };
+      if (paginationSpell.sort) {
+        const field = paginationSpell.sort.replace("-", "");
+        sort[field] = paginationSpell.sort.startsWith("-") ? -1 : 1;
+      }
 
-      const start: number = Date.now();
-      const spells: Spell[] = await this.spellModel.find(filters).skip(skip).limit(offset).sort(sort).exec();
-      const end: number = Date.now();
+      const totalItems = await this.spellModel.countDocuments(filters);
 
-      const message: string = `Spells found in ${end - start}ms`;
-      this.logger.log(message);
+      const start = Date.now();
+      let spells: Spell[] = await this.spellModel
+        .find(filters)
+        .select(projection)
+        .skip(skip)
+        .limit(offset)
+        .sort(sort)
+        .exec();
+      const end = Date.now();
+
+      // If no lang provided and name filter applied, filter translations to keep only those matching the name
+      if (name.length > 0 && lang.length == 0) {
+        const decodedName = decodeURIComponent(name).toLowerCase();
+        spells = spells.map(spell => {
+          const filteredTranslations: any = {};
+          for (const language of spell.languages) {
+            const translation = spell.translations.get(language);
+            if (translation && translation.name && translation.name.toLowerCase().includes(decodedName)) {
+              filteredTranslations[language] = translation;
+            }
+          }
+          spell.translations = filteredTranslations;
+          return spell;
+        }) as Spell[];
+      }
+
+      this.logger.log(`Spells found in ${end - start}ms`);
+
       return {
-        message,
+        message: `Spells found in ${end - start}ms`,
         data: spells,
         pagination: {
           page,
@@ -51,10 +118,20 @@ export class SpellsService {
     }
   }
 
-  async findOne(id: Types.ObjectId) : Promise<IResponse<Spell>> {
+  async findOne(id: Types.ObjectId, lang: string) : Promise<IResponse<Spell>> {
     try {
+
+      let projection: any = {
+        tag: 1,
+        languages: 1,
+        [`translations.${lang}`]: 1,
+        deletedAt: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      };
+
       const start: number = Date.now();
-      const spell: Spell = await this.spellModel.findById(id).exec();
+      const spell: Spell = await this.spellModel.findById(id).select(projection).exec();
       const end: number = Date.now();
 
       if(!spell) {

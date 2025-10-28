@@ -6,4 +6,8 @@ export class PaginationSpell extends Pagination {
     @IsOptional()
     @IsString()
     name?: string
+
+    @IsOptional()
+    @IsString()
+    lang?: string
 }

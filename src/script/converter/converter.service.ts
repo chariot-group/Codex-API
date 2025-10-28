@@ -4,7 +4,6 @@ import { Model } from "mongoose";
 import { readFile } from "fs/promises";
 import { Spell } from "@/resources/spells/schemas/spell.schema";
 import { Spellcontent } from "@/resources/spells/schemas/spell-content.schema";
-import e from "express";
 @Injectable()
 export class ConverterService {
   readonly SERVICE_NAME = this.constructor.name;

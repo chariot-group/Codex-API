@@ -4,7 +4,8 @@ import { Types } from "mongoose";
 import { Spell } from "@/resources/spells/schemas/spell.schema";
 import { ParseMongoIdPipe } from "@/common/pipes/parse-mong-id.pipe";
 import { IResponse } from "@/common/dtos/reponse.dto";
-import { PaginationSpell } from "@/resources/spells/dto/pagination-spell.dto";
+import { PaginationSpell } from "@/resources/spells/dto/find-all.dto";
+import { langParam } from "./dto/find-one.dto";
 
 @Controller("spells")
 export class SpellsController {
@@ -20,13 +21,13 @@ export class SpellsController {
    * @param id Resource ID
    * @returns object IResponse<Spell>
    */
-  private async validateResource(id: Types.ObjectId): Promise<IResponse<Spell>> {
+  private async validateResource(id: Types.ObjectId, lang: string): Promise<IResponse<Spell>> {
     if (!Types.ObjectId.isValid(id)) {
       const message = `Error while fetching spell #${id}: Id is not a valid mongoose id`;
       this.logger.error(message);
       throw new BadRequestException(message);
     }
-    return await this.spellsService.findOne(id);
+    return await this.spellsService.findOne(id, lang);
   }
 
   @Get()
@@ -37,7 +38,8 @@ export class SpellsController {
   }
 
   @Get(":id")
-  async findOne(@Param("id", ParseMongoIdPipe) id: Types.ObjectId) {
-    return this.validateResource(id);
+  async findOne(@Param("id", ParseMongoIdPipe) id: Types.ObjectId, @Query() query: langParam) {
+    const { lang = "en"} = query;
+    return this.validateResource(id, lang);
   }
 }
