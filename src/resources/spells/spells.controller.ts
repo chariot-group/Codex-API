@@ -5,6 +5,7 @@ import { Model, Types } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { Spell } from "@/resources/spells/schemas/spell.schema";
 import { ParseMongoIdPipe } from "@/common/pipes/parse-mong-id.pipe";
+import { ApiOperation, ApiResponse } from "@nestjs/swagger";
 
 @Controller("spells")
 export class SpellsController {
@@ -38,6 +39,8 @@ export class SpellsController {
   }
 
   @Get()
+  @ApiOperation({ summary: "Get a collection of paginated spells" })
+  @ApiResponse({ status: 200, description: "List of spells retrieved successfully" })
   findAll(
     @Query("page", ParseNullableIntPipe) page?: number,
     @Query("offset", ParseNullableIntPipe) offset?: number,
@@ -53,6 +56,11 @@ export class SpellsController {
   }
 
   @Get(":id")
+  @ApiOperation({ summary: "Get a spell by ID" })
+  @ApiResponse({ status: 200, description: "Spell retrieved successfully" })
+  @ApiResponse({ status: 404, description: "Spell #ID not found" })
+  @ApiResponse({ status: 400, description: "Error while fetching spell #ID: Id is not a valid mongoose id" })
+  @ApiResponse({ status: 410, description: "Error while fetching spell #ID: spell is no longer available" })
   async findOneById(@Param("id", ParseMongoIdPipe) id: Types.ObjectId) {
     await this.validateResource(id);
 
