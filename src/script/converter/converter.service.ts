@@ -3,7 +3,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { readFile } from "fs/promises";
 import { Spell } from "@/resources/spells/schemas/spell.schema";
-import { Spellcontent } from "@/resources/spells/schemas/spell-content.schema";
+import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
 @Injectable()
 export class ConverterService {
   readonly SERVICE_NAME = this.constructor.name;
@@ -18,7 +18,7 @@ export class ConverterService {
     const rawData = JSON.parse(file);
 
     Logger.log(`Conversion de ${rawData.length} sorts...`, this.SERVICE_NAME);
-    const spellContents: Partial<Spellcontent>[] = rawData.map(this.mapExternalSpell);
+    const spellContents: Partial<SpellContent>[] = rawData.map(this.mapExternalSpell);
 
     const spells : Spell[] = spellContents.map(this.mapSpell);
 
@@ -27,7 +27,7 @@ export class ConverterService {
     Logger.log(`✔️ ${spells.length} sorts insérés`, this.SERVICE_NAME);
   }
 
-  private mapExternalSpell(entry: any): Partial<Spellcontent> {
+  private mapExternalSpell(entry: any): Partial<SpellContent> {
     const baseDamage = entry.damage?.damage_at_slot_level?.["2"] ?? entry.damage?.damage_at_character_level?.["1"];
     const healing = entry.heal_at_slot_level?.["2"];
 
@@ -41,7 +41,7 @@ export class ConverterService {
       effectType = 2;
     }
 
-    let spellcontent: Spellcontent = new Spellcontent()
+    let spellcontent: SpellContent = new SpellContent()
 
     spellcontent.name = entry.name;
     spellcontent.level = entry.level;
@@ -60,9 +60,9 @@ export class ConverterService {
     return spellcontent;
   }
 
-  private mapSpell(entry: Spellcontent): Spell {
+  private mapSpell(entry: SpellContent): Spell {
 
-    let translations : Map<string, Spellcontent> = new Map();
+    let translations : Map<string, SpellContent> = new Map();
     translations.set("en", entry);
 
     let spell: Spell = new Spell();

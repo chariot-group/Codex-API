@@ -1,14 +1,21 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Spellcontent, SpellContentSchema } from "./spell-content.schema";
+import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
 import { MetaDataSchema } from "@/common/schemas/metadata.schema";
 import mongoose from "mongoose";
+import { ApiExtraModels, ApiProperty, getSchemaPath } from "@nestjs/swagger";
 
+@ApiExtraModels(SpellContent)
 @Schema({timestamps: true})
 export class Spell extends MetaDataSchema {
 
   /**
-   *  Map de code ISO 3 → Schéma générique T
+   *  Map de code ISO 2 → Schéma SpellContent
    */
+  @ApiProperty({
+    type: "object",
+    additionalProperties: { $ref: getSchemaPath(SpellContent)},
+    example: { "en": getSchemaPath(SpellContent) }
+  })
   @Prop({
     type: Map,
     of: mongoose.Schema.Types.Mixed,
@@ -20,8 +27,9 @@ export class Spell extends MetaDataSchema {
       message: "Each key must be a 2-letter ISO code in lowercase (e.g., fr, en, es)."
     }
   })
-  translations: Map<string, Spellcontent>;
+  translations: Map<string, SpellContent>;
 
+  @ApiProperty({ example: null })
   @Prop({ default: null })
   deletedAt?: Date;
 

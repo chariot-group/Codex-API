@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Monstercontent } from "./monster-content.schema";
+import { Monstercontent } from "@/resources/monsters/schemas/monster-content.schema";
 import { MetaDataSchema } from "@/common/schemas/metadata.schema";
 import mongoose from "mongoose";
 

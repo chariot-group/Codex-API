@@ -1,4 +1,5 @@
 import { Prop, Schema } from "@nestjs/mongoose";
+import { ApiProperty } from "@nestjs/swagger";
 
 @Schema()
 export class MetaDataSchema {
@@ -6,12 +7,14 @@ export class MetaDataSchema {
     /**
     * O: homebrew, 1: Certifié par Chariot
     */
+    @ApiProperty({ example: 1 })
     @Prop({ required: true, default: true })
     tag: number;
     
     /**
     * Liste des langues vérifier disponible
     */
+   @ApiProperty({ example: ["en"], type: [String] })
     @Prop({
         type: [String],
         default: [],
