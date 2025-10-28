@@ -5,6 +5,7 @@ import { Model, Types } from "mongoose";
 import { IResponse, IPaginatedResponse } from "@/common/dtos/reponse.dto";
 import { PaginationSpell } from "@/resources/spells/dtos/find-all.dto";
 import { DtoMapper } from "@/common/mappers/common.mapper";
+import { SpellContent } from "./schemas/spell-content.schema";
 
 @Injectable()
 export class SpellsService {
@@ -28,32 +29,34 @@ export class SpellsService {
         updatedAt: 1,
       };
 
+      // Si on recherche par nom
       if (name.length > 0) {
         const decodedName = decodeURIComponent(name);
+
+        // Si on recherche aussi par langue
         if (lang.length > 0) {
+          // Vérifie le nom dans la langue voule
           filters[`translations.${lang}.name`] = { $regex: decodedName, $options: "i" };
+          // Affiche seulement la langue voulue
           projection = {
             ...projection,
             [`translations.${lang}`]: 1,
           };
         } else {
-          // Filter by name on all available languages dynamically
-          // First, get all distinct languages from the collection
+          // On cherche dans tous les langues
           const languages = await this.spellModel.distinct("languages");
-          // Build $or filter for all languages
           filters["$or"] = languages.map(language => ({
             [`translations.${language}.name`]: { $regex: decodedName, $options: "i" }
           }));
 
-          // Projection: include only translations matching the filter
-          // Since MongoDB projection can't filter array elements by condition easily,
-          // we will project all translations but filter in-memory after querying
+          // On affiche toutes les langues
           projection = {
             ...projection,
             translations: 1,
           };
         }
       } else {
+        // Si on cherche seulement par langue
         if (lang.length > 0) {
           projection = {
             ...projection,
@@ -86,17 +89,24 @@ export class SpellsService {
         .exec();
       const end = Date.now();
 
-      // If no lang provided and name filter applied, filter translations to keep only those matching the name
+      // Si on cherche par nom dans toutes les langues
       if (name.length > 0 && lang.length == 0) {
-        const decodedName = decodeURIComponent(name).toLowerCase();
+        const decodedName: string = decodeURIComponent(name).toLowerCase();
+
         spells = spells.map(spell => {
-          const filteredTranslations: any = {};
+          const filteredTranslations: Map<string, SpellContent> = new Map();
+
+          // On parcours toutes les langues
           for (const language of spell.languages) {
-            const translation = spell.translations.get(language);
+            const translation: SpellContent = spell.translations.get(language);
+
+            // Si le nom renseigné dans cette langue match
             if (translation && translation.name && translation.name.toLowerCase().includes(decodedName)) {
               filteredTranslations[language] = translation;
             }
           }
+
+          // On remplace par les traduction qui on un nom qui match avec la recherche
           spell.translations = filteredTranslations;
           return spell;
         }) as Spell[];
@@ -114,6 +124,7 @@ export class SpellsService {
         },
       };
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       const message: string = `Error while fetching spells: ${error.message}`;
       this.logger.error(message);
       throw new InternalServerErrorException(message);

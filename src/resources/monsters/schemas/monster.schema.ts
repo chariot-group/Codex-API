@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Monstercontent } from "@/resources/monsters/schemas/monster-content.schema";
+import { MonsterContent } from "@/resources/monsters/schemas/monster-content.schema";
 import { MetaDataSchema } from "@/common/schemas/metadata.schema";
 import mongoose from "mongoose";
 
@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 export class Monster extends MetaDataSchema {
 
   /**
-   *  Map de code ISO 3 → Schéma générique T
+   *  Map de code ISO 2 → Schéma MonsterContent
    */
   @Prop({
     type: Map,
@@ -20,7 +20,7 @@ export class Monster extends MetaDataSchema {
       message: "Each key must be a 2-letter ISO code in lowercase (e.g., fr, en, es)."
     }
   })
-  translations: Map<string, Monstercontent>;
+  translations: Map<string, MonsterContent>;
 
   @Prop({ default: null })
   deletedAt?: Date;

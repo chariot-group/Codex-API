@@ -7,7 +7,7 @@ import { ParseMongoIdPipe } from "@/common/pipes/parse-mong-id.pipe";
 import { IPaginatedResponse, IResponse } from "@/common/dtos/reponse.dto";
 import { PaginationSpell } from "@/resources/spells/dtos/find-all.dto";
 import { langParam } from "@/resources/spells/dtos/find-one.dto";
-import { SpellContent } from "./schemas/spell-content.schema";
+import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
 
 @ApiExtraModels(Spell, SpellContent, IResponse, IPaginatedResponse)
 @Controller("spells")

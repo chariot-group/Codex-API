@@ -1,12 +1,11 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import mongoose, { Document } from "mongoose";
 import { Affinities } from "@/resources/monsters/schemas/affinities/affinities.schema";
 import { Ability } from "@/resources/monsters/schemas/ability/ability.schema";
 import { Spellcasting } from "@/resources/monsters/schemas/spellcasting/spellcasting.schema";
 import { Stats } from "@/resources/monsters/schemas/stats/stats.schema";
 
 @Schema()
-export class Monstercontent {
+export class MonsterContent {
 
   @Prop({ required: true, default: true })
   srd: boolean;
@@ -37,4 +36,4 @@ export class Monstercontent {
 
 }
 
-export const MonsterContentSchema = SchemaFactory.createForClass(Monstercontent);
+export const MonsterContentSchema = SchemaFactory.createForClass(MonsterContent);

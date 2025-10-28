@@ -6,6 +6,7 @@ export class MetaDataSchema {
   
     /**
     * O: homebrew, 1: Certifié par Chariot
+    * @type number
     */
     @ApiProperty({ example: 1 })
     @Prop({ required: true, default: true })
@@ -13,6 +14,7 @@ export class MetaDataSchema {
     
     /**
     * Liste des langues vérifier disponible
+    * @type String[]
     */
    @ApiProperty({ example: ["en"], type: [String] })
     @Prop({

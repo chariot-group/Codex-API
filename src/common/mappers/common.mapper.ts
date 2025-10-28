@@ -2,8 +2,17 @@ interface Translatable {
   languages: string[];
   translations: Record<string, any>;
 }
+/**
+ * Generic class allowing modification of a DTO
+ * @param T must have languages and translations
+ */
 export class DtoMapper<T extends Translatable>{
 
+    /**
+     * Subtracted from languages, languages already in translations
+     * @param entry a dto that has languages and translations
+     * @returns the dto with modified languages
+     */
     transform(entry: T): T {
         const languages = entry.languages;
         const currentTranslations =
@@ -17,6 +26,11 @@ export class DtoMapper<T extends Translatable>{
         return entry;
     }
 
+    /**
+     * Subtracted from languages, languages already in translations for each dto
+     * @param entry list of dtos that has languages and translations
+     * @returns the dto list with modified languages
+     */
     transforms(entry: T[]): T[] {
         return entry.map(val => {
             return this.transform(val);

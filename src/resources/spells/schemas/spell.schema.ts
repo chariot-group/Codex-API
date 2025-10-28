@@ -9,7 +9,8 @@ import { ApiExtraModels, ApiProperty, getSchemaPath } from "@nestjs/swagger";
 export class Spell extends MetaDataSchema {
 
   /**
-   *  Map de code ISO 2 → Schéma SpellContent
+   *  Toutes les traductions
+   * @type Map<String, SpelleContent>
    */
   @ApiProperty({
     type: "object",
