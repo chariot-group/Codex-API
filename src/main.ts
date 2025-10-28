@@ -13,7 +13,7 @@ async function bootstrap() {
   });
 
   const document = setupSwagger(app);
-  SwaggerModule.setup("api", app, document);
+  SwaggerModule.setup("swagger", app, document);
 
   await app.listen(process.env.API_PORT!);
 }
