@@ -5,7 +5,7 @@ import { Model, Types } from "mongoose";
 import { IResponse, IPaginatedResponse } from "@/common/dtos/reponse.dto";
 import { PaginationSpell } from "@/resources/spells/dtos/find-all.dto";
 import { DtoMapper } from "@/common/mappers/common.mapper";
-import { SpellContent } from "./schemas/spell-content.schema";
+import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
 
 @Injectable()
 export class SpellsService {
