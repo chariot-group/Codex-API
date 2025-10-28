@@ -32,7 +32,7 @@ export class SpellsController {
 
   @Get()
   findAll(
-    query: PaginationSpell,
+    @Query() query: PaginationSpell,
   ) {
     return this.spellsService.findAll(query);
   }
