@@ -1,10 +1,12 @@
+import { IPagination } from "./pagination.dto"
+
 export interface IResponse<T> {
     message : string,
     data: T
 }
 
-export interface IResponsePaginate<T> extends IResponse<T> {
-    pagination : {
+export interface IPaginatedResponse<T> extends IResponse<T> {
+    pagination: {
         page: number,
         offset: number,
         totalItems: number

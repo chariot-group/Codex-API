@@ -2,7 +2,8 @@ import { HttpException, Injectable, InternalServerErrorException, Logger, NotFou
 import { Spell } from "@/resources/spells/schemas/spell.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
-import { IResponse, IResponsePaginate } from "@/common/interfaces/reponse.interface";
+import { IResponse, IPaginatedResponse } from "@/common/dtos/reponse.dto";
+import { PaginationSpell } from "./dto/pagination-spell.dto";
 
 @Injectable()
 export class SpellsService {
@@ -11,9 +12,9 @@ export class SpellsService {
   private readonly SERVICE_NAME = SpellsService.name;
   private readonly logger = new Logger(this.SERVICE_NAME);
 
-  async findAll(query: { page?: number; offset?: number; sort?: string; name?: string }) : Promise<IResponsePaginate<Spell[]>> {
+  async findAll(paginationSpell: PaginationSpell) : Promise<IPaginatedResponse<Spell[]>> {
     try {
-      const { page = 1, offset = 10, name = "" } = query;
+      const { page = 1, offset = 10, name = "" } = paginationSpell;
       const skip: number = (page - 1) * offset;
 
       const filters = {
@@ -22,8 +23,8 @@ export class SpellsService {
 
       const sort: { [key: string]: 1 | -1 } = { updatedAt: -1 };
 
-      if (query.sort) {
-        query.sort.startsWith("-") ? (sort[query.sort.substring(1)] = -1) : (sort[query.sort] = 1);
+      if (paginationSpell.sort) {
+        paginationSpell.sort.startsWith("-") ? (sort[paginationSpell.sort.substring(1)] = -1) : (sort[paginationSpell.sort] = 1);
       }
 
       const totalItems: number = await this.spellModel.countDocuments(filters);

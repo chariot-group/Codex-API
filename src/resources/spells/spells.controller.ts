@@ -4,7 +4,8 @@ import { ParseNullableIntPipe } from "@/common/pipes/parse-nullable-int.pipe";
 import { Types } from "mongoose";
 import { Spell } from "@/resources/spells/schemas/spell.schema";
 import { ParseMongoIdPipe } from "@/common/pipes/parse-mong-id.pipe";
-import { IResponse } from "@/common/interfaces/reponse.interface";
+import { IResponse } from "@/common/dtos/reponse.dto";
+import { PaginationSpell } from "./dto/pagination-spell.dto";
 
 @Controller("spells")
 export class SpellsController {
@@ -31,17 +32,9 @@ export class SpellsController {
 
   @Get()
   findAll(
-    @Query("page", ParseNullableIntPipe) page?: number,
-    @Query("offset", ParseNullableIntPipe) offset?: number,
-    @Query("sort") sort?: string,
-    @Query("name") name?: string,
+    query: PaginationSpell,
   ) {
-    return this.spellsService.findAll({
-      page,
-      offset,
-      sort,
-      name,
-    });
+    return this.spellsService.findAll(query);
   }
 
   @Get(":id")
