@@ -100,6 +100,16 @@
               "example": "507f1f77bcf86cd799439011",
               "type": "string"
             }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "path",
+            "description": "The ISO 2 code of translation",
+            "schema": {
+              "example": "en",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -192,9 +202,28 @@
       }
     },
     "schemas": {
-      "Spell": {
+      "SpellContent": {
         "type": "object",
         "properties": {
+          "srd": {
+            "type": "boolean",
+            "example": true
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": null
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-10-28T19:28:04.871Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-10-28T19:28:04.871Z"
+          },
           "name": {
             "type": "string",
             "example": "Fireball"
@@ -235,8 +264,8 @@
             "example": "150 feet"
           },
           "effectType": {
-            "type": "string",
-            "example": "DAMAGE"
+            "type": "number",
+            "example": 0
           },
           "damage": {
             "type": "string",
@@ -248,6 +277,10 @@
           }
         },
         "required": [
+          "srd",
+          "deletedAt",
+          "createdAt",
+          "updatedAt",
           "name",
           "level",
           "school",
@@ -259,6 +292,44 @@
           "effectType",
           "damage",
           "healing"
+        ]
+      },
+      "Spell": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "number",
+            "example": 1
+          },
+          "languages": {
+            "example": [
+              "en"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "translations": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SpellContent"
+            },
+            "example": {
+              "en": "#/components/schemas/SpellContent"
+            }
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": null
+          }
+        },
+        "required": [
+          "tag",
+          "languages",
+          "translations",
+          "deletedAt"
         ]
       },
       "IResponse": {

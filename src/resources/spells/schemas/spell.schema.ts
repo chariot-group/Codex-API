@@ -1,53 +1,40 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { ApiProperty } from "@nestjs/swagger";
-import { EffectType } from "@/resources/spells/constants/effect-types.constant";
+import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
 import { MetaDataSchema } from "@/common/schemas/metadata.schema";
+import mongoose from "mongoose";
+import { ApiExtraModels, ApiProperty, getSchemaPath } from "@nestjs/swagger";
 
-@Schema({ _id: false })
+@ApiExtraModels(SpellContent)
+@Schema({timestamps: true})
 export class Spell extends MetaDataSchema {
-  @ApiProperty({ example: "Fireball" })
-  @Prop()
-  name?: string;
 
-  @ApiProperty({ example: 3 })
-  @Prop()
-  level?: number;
-
-  @ApiProperty({ example: "Evocation" })
-  @Prop()
-  school?: string;
-
-  @ApiProperty({ example: "A bright streak flares from your pointing finger..." })
-  @Prop()
-  description?: string;
-
-  @ApiProperty({ type: [String], example: ["V", "S", "M"] })
-  @Prop({ default: [] })
-  components: string[];
-
-  @ApiProperty({ example: "1 action" })
-  @Prop()
-  castingTime?: string;
-
-  @ApiProperty({ example: "Instantaneous" })
-  @Prop()
-  duration?: string;
-
-  @ApiProperty({ example: "150 feet" })
-  @Prop()
-  range?: string;
-
-  @ApiProperty({ example: "DAMAGE" })
-  @Prop()
-  effectType?: EffectType;
-
-  @ApiProperty({ example: "8d6" })
-  @Prop()
-  damage?: string;
+  /**
+   *  All translations
+   * @type Map<String, SpelleContent>
+   */
+  @ApiProperty({
+    type: "object",
+    additionalProperties: { $ref: getSchemaPath(SpellContent)},
+    example: { "en": getSchemaPath(SpellContent) }
+  })
+  @Prop({
+    type: Map,
+    of: mongoose.Schema.Types.Mixed,
+    default: {},
+    validate: {
+      validator: function (map: Map<string, unknown>) {
+        return Array.from(map.keys()).every((key) => /^[a-z]{2}$/.test(key));
+      },
+      message: "Each key must be a 2-letter ISO code in lowercase (e.g., fr, en, es)."
+    }
+  })
+  translations: Map<string, SpellContent>;
 
   @ApiProperty({ example: null })
-  @Prop()
-  healing?: string;
+  @Prop({ default: null })
+  deletedAt?: Date;
+
 }
 
 export const SpellSchema = SchemaFactory.createForClass(Spell);
+
