@@ -5,7 +5,7 @@ import { ApiProperty } from "@nestjs/swagger";
 export class MetaDataSchema {
   
     /**
-    * O: homebrew, 1: Certifié par Chariot
+    * O: homebrew, 1: Certified by Chariot
     * @type number
     */
     @ApiProperty({ example: 1 })
@@ -13,7 +13,7 @@ export class MetaDataSchema {
     tag: number;
     
     /**
-    * Liste des langues vérifiées disponibles
+    * All availables translations
     * @type String[]
     */
    @ApiProperty({ example: ["en"], type: [String] })
