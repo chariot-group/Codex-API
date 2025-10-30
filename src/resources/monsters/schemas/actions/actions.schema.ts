@@ -11,6 +11,12 @@ export class Actions {
 
   @Prop({ type: [Action], default: [] })
   lair: Action[];
+
+  @Prop({ type: [Action], default: [] })
+  reactions: Action[];
+
+  @Prop({ type: [Action], default: [] })
+  bonus: Action[];
 }
 
 export const ActionsSchema = SchemaFactory.createForClass(Actions);
