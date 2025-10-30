@@ -17,10 +17,23 @@ export class ConverterService {
     const file = await readFile(inputPath, "utf-8");
     const rawData = JSON.parse(file);
 
+    if (resource === "spells") {
+      await this.convertSpells(rawData);
+    } else if (resource === "monsters") {
+      console.log("Conversion des monstres non encore implémentée.");
+    } else {
+      Logger.error(
+        `Ressource inconnue "${resource}". Seuls les sorts ("spells") sont supportés pour le moment.`,
+        this.SERVICE_NAME,
+      );
+    }
+  }
+
+  async convertSpells(rawData): Promise<void> {
     Logger.log(`Conversion de ${rawData.length} sorts...`, this.SERVICE_NAME);
     const spellContents: Partial<SpellContent>[] = rawData.map(this.mapExternalSpell);
 
-    const spells : Spell[] = spellContents.map(this.mapSpell);
+    const spells: Spell[] = spellContents.map(this.mapSpell);
 
     Logger.log(`Insertion en base...`, this.SERVICE_NAME);
     await this.spellModel.insertMany(spells);
@@ -41,7 +54,7 @@ export class ConverterService {
       effectType = 2;
     }
 
-    let spellcontent: SpellContent = new SpellContent()
+    let spellcontent: SpellContent = new SpellContent();
 
     spellcontent.name = entry.name;
     spellcontent.level = entry.level;
@@ -56,13 +69,12 @@ export class ConverterService {
     spellcontent.srd = true;
     spellcontent.createdAt = new Date();
     spellcontent.updatedAt = new Date();
-    
+
     return spellcontent;
   }
 
   private mapSpell(entry: SpellContent): Spell {
-
-    let translations : Map<string, SpellContent> = new Map();
+    let translations: Map<string, SpellContent> = new Map();
     translations.set("en", entry);
 
     let spell: Spell = new Spell();
@@ -70,7 +82,7 @@ export class ConverterService {
     spell.tag = 1;
     spell.languages = ["en"];
     spell.translations = translations;
-    
+
     return spell;
   }
 }
