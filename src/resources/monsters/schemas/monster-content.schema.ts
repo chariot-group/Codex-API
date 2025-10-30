@@ -3,10 +3,12 @@ import { Affinities } from "@/resources/monsters/schemas/affinities/affinities.s
 import { Ability } from "@/resources/monsters/schemas/ability/ability.schema";
 import { Spellcasting } from "@/resources/monsters/schemas/spellcasting/spellcasting.schema";
 import { Stats } from "@/resources/monsters/schemas/stats/stats.schema";
+import { Actions } from "@/resources/monsters/schemas/actions/actions.schema";
+import { Challenge } from "@/resources/monsters/schemas/challenge/challenge.schema";
+import { Profile } from "@/resources/monsters/schemas/profile/profile.schema";
 
 @Schema()
 export class MonsterContent {
-
   @Prop({ required: true, default: true })
   srd: boolean;
 
@@ -34,6 +36,14 @@ export class MonsterContent {
   @Prop({ type: [Spellcasting], default: [] })
   spellcasting: Spellcasting[];
 
+  @Prop({ type: Actions, default: {} })
+  actions: Actions;
+
+  @Prop({ type: Challenge, default: {} })
+  challenge: Challenge;
+
+  @Prop({ type: Profile, default: {} })
+  profile?: Profile;
 }
 
 export const MonsterContentSchema = SchemaFactory.createForClass(MonsterContent);
