@@ -174,7 +174,7 @@ export class SpellsService {
   async create(createSpellDto: CreateSpellDto): Promise<IResponse<Spell>> {
     try {
 
-      const spell = this.mapper.dtoToEntity(createSpellDto);
+      const spell: Spell = this.mapper.dtoToEntity(createSpellDto);
 
       const start: number = Date.now();
       const createdSpell = new this.spellModel(spell);
