@@ -101,7 +101,7 @@ export class SpellsController {
     example: "507f1f77bcf86cd799439011",
   })
   async update(@Param("id", ParseMongoIdPipe) id: Types.ObjectId, @Body() updateData: UpdateSpellDto): Promise<IResponse<Spell>> {
-    await this.validateResource(id, "en");
-    return this.spellsService.update(id, updateData);
+    const oldSpell: IResponse<Spell> = await this.validateResource(id, "en");
+    return this.spellsService.update(id, oldSpell.data, updateData);
   }
 }

@@ -6,6 +6,7 @@ import { IResponse, IPaginatedResponse } from "@/common/dtos/reponse.dto";
 import { PaginationSpell } from "@/resources/spells/dtos/find-all.dto";
 import { DtoMapper } from "@/common/mappers/common.mapper";
 import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
+import { UpdateSpellDto } from "./dtos/update-spell.dto";
 
 @Injectable()
 export class SpellsService {
@@ -169,10 +170,11 @@ export class SpellsService {
     }
   }
 
-  async update(id: Types.ObjectId, updateData: Partial<Spell>): Promise<IResponse<Spell>> {
+  async update(id: Types.ObjectId, oldSpell: Spell, updateData: UpdateSpellDto): Promise<IResponse<Spell>> {
     try {
       const start: number = Date.now();
-      const updatedSpell: Spell = await this.spellModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+      const spell = await this.spellModel.updateOne({ _id: id }, updateData).exec();
+      oldSpell.tag = updateData.tag;
       const end: number = Date.now();
 
       const message: string = `Spell #${id} updated in ${end - start}ms`;
@@ -180,7 +182,7 @@ export class SpellsService {
 
       return {
         message,
-        data: this.mapper.transform(updatedSpell),
+        data: oldSpell,
       };
 
     } catch (error) {
