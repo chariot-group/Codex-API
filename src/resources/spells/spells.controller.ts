@@ -71,7 +71,7 @@ export class SpellsController {
   })
   @ApiOperation({ summary: "Get a spell by ID" })
   @ApiOkResponse({
-    description: "Spell #ID found",
+    description: "Spell found successfully",
     schema: {
       allOf: [
         { $ref: getSchemaPath(IResponse) },
@@ -91,6 +91,38 @@ export class SpellsController {
   }
 
   @Post()
+  @ApiOperation({ summary: "Create a new spell" })
+  @ApiOkResponse({
+    description: "Spell created successfully",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(IResponse) },
+        {
+          properties: {
+            data: { $ref: getSchemaPath(Spell) },
+          },
+        },
+      ],
+    },
+  })
+  @ApiResponse({ 
+    status: 400,
+    description: "Validation DTO failed",
+    schema: {
+      allOf: [
+        {
+          example: {
+            message: [
+              "spellContent.description must be a string",
+              "spellContent.level must be a number conforming to the specified constraints"
+            ],
+            statusCode: 400,
+            error: "Bad Request"
+          }
+        }
+      ],
+    }
+  })
   async create(@Body() spellDto: CreateSpellDto): Promise<IResponse<Spell>> {
     return this.spellsService.create(spellDto);
   }

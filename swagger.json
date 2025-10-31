@@ -85,6 +85,69 @@
         "tags": [
           "Spells"
         ]
+      },
+      "post": {
+        "operationId": "SpellsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSpellDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Spell #ID created in Xms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Spell"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {},
+                    {
+                      "example": {
+                        "message": [
+                          "spellContent.description must be a string",
+                          "spellContent.level must be a number conforming to the specified constraints"
+                        ],
+                        "statusCode": 400,
+                        "error": "Bad Request"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new spell",
+        "tags": [
+          "Spells"
+        ]
       }
     },
     "/spells/{id}": {
@@ -217,12 +280,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-10-28T19:28:04.871Z"
+            "example": "2025-10-31T16:21:07.640Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-10-28T19:28:04.871Z"
+            "example": "2025-10-31T16:21:07.640Z"
           },
           "name": {
             "type": "string",
@@ -388,6 +451,91 @@
           "message",
           "data",
           "pagination"
+        ]
+      },
+      "CreateSpellContentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Fireball"
+          },
+          "description": {
+            "type": "string",
+            "example": "A bright streak flashes from your pointing finger to a point you choose within range."
+          },
+          "level": {
+            "type": "number",
+            "example": 3
+          },
+          "school": {
+            "type": "string",
+            "example": "Evocation"
+          },
+          "castingTime": {
+            "type": "string",
+            "example": "1 action"
+          },
+          "range": {
+            "type": "string",
+            "example": "150 feet"
+          },
+          "components": {
+            "example": [
+              "V",
+              "S",
+              "M"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "duration": {
+            "type": "string",
+            "example": "Instantaneous"
+          },
+          "effectType": {
+            "type": "number",
+            "example": 1
+          },
+          "damage": {
+            "type": "string",
+            "example": "8d6"
+          },
+          "healing": {
+            "type": "string",
+            "example": "Heal 4d8 + spellcasting modifier"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "level",
+          "school",
+          "castingTime",
+          "range",
+          "components",
+          "duration",
+          "effectType",
+          "damage",
+          "healing"
+        ]
+      },
+      "CreateSpellDto": {
+        "type": "object",
+        "properties": {
+          "lang": {
+            "type": "string",
+            "example": "en"
+          },
+          "spellContent": {
+            "$ref": "#/components/schemas/CreateSpellContentDto"
+          }
+        },
+        "required": [
+          "lang",
+          "spellContent"
         ]
       }
     }

@@ -7,15 +7,13 @@ import { CreateSpellContentDto } from "@/resources/spells/dtos/create-spell-cont
 export class SpellsMapper extends DtoMapper<Spell> {
 
     dtoToEntity(dto: CreateSpellDto): Spell {
-        const spell = new Spell();
-
-        spell.languages = dto.languages;
+        const spell: Spell = new Spell();
 
         spell.translations = new Map<string, SpellContent>();
-        dto.translations.forEach((value: CreateSpellContentDto, key: string) => {
-            const spellContent = this.dtoSpellContentToEntity(value);
-            spell.translations.set(key, spellContent);
-        });
+        let spellContent: SpellContent = this.dtoSpellContentToEntity(dto.spellContent);
+
+        spell.translations.set(dto.lang, spellContent);
+        spell.languages = [dto.lang];
         
         spell.tag = 0;
 
@@ -23,7 +21,7 @@ export class SpellsMapper extends DtoMapper<Spell> {
     }
 
     dtoSpellContentToEntity(dto: CreateSpellContentDto): SpellContent {
-        const spellContent = new SpellContent();
+        const spellContent: SpellContent = new SpellContent();
 
         spellContent.srd = false;
         spellContent.name = dto.name;
