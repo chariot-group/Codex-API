@@ -95,7 +95,7 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "The ID of the spell to retrieve",
+            "description": "The ID of the spell to update",
             "schema": {
               "example": "507f1f77bcf86cd799439011",
               "type": "string"
@@ -139,6 +139,9 @@
           },
           "404": {
             "description": "Spell #ID not found"
+          },
+          "410": {
+            "description": "Spell #ID has been deleted"
           }
         },
         "summary": "Get a spell by ID",
@@ -211,6 +214,12 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Spell #ID not found"
+          },
+          "410": {
+            "description": "Spell #ID has been deleted"
           }
         },
         "summary": "Update a spell by ID",
@@ -289,12 +298,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-01T09:21:50.229Z"
+            "example": "2025-11-01T10:10:01.701Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-01T09:21:50.230Z"
+            "example": "2025-11-01T10:10:01.701Z"
           },
           "name": {
             "type": "string",

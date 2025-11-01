@@ -85,6 +85,7 @@ export class SpellsController {
   })
   @ApiResponse({ status: 404, description: "Spell #ID not found" })
   @ApiResponse({ status: 400, description: "Error while fetching spell #ID: Id is not a valid mongoose id" })
+  @ApiResponse({ status: 410, description: "Spell #ID has been deleted" })
   async findOne(@Param("id", ParseMongoIdPipe) id: Types.ObjectId, @Query() query: langParam): Promise<IResponse<Spell>> {
     const { lang = "en"} = query;
     return this.validateResource(id, lang);
@@ -129,6 +130,8 @@ export class SpellsController {
       ],
     }
   })
+  @ApiResponse({ status: 404, description: "Spell #ID not found" })
+  @ApiResponse({ status: 410, description: "Spell #ID has been deleted" })
   async update(@Param("id", ParseMongoIdPipe) id: Types.ObjectId, @Body() updateData: UpdateSpellDto): Promise<IResponse<Spell>> {
     const oldSpell: IResponse<Spell> = await this.validateResource(id, "en");
     return this.spellsService.update(id, oldSpell.data, updateData);
