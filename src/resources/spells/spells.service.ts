@@ -6,7 +6,7 @@ import { IResponse, IPaginatedResponse } from "@/common/dtos/reponse.dto";
 import { PaginationSpell } from "@/resources/spells/dtos/find-all.dto";
 import { DtoMapper } from "@/common/mappers/common.mapper";
 import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
-import { UpdateSpellDto } from "./dtos/update-spell.dto";
+import { UpdateSpellDto } from "@/resources/spells/dtos/update-spell.dto";
 
 @Injectable()
 export class SpellsService {

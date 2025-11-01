@@ -8,8 +8,7 @@ import { IPaginatedResponse, IResponse } from "@/common/dtos/reponse.dto";
 import { PaginationSpell } from "@/resources/spells/dtos/find-all.dto";
 import { langParam } from "@/resources/spells/dtos/find-one.dto";
 import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
-import { UpdateSpellDto } from "./dtos/update-spell.dto";
-import { find } from "rxjs";
+import { UpdateSpellDto } from "@/resources/spells/dtos/update-spell.dto";
 
 @ApiExtraModels(Spell, SpellContent, IResponse, IPaginatedResponse)
 @Controller("spells")
