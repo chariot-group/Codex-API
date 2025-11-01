@@ -60,7 +60,7 @@ export class SpellsController {
     name: "id",
     type: String,
     required: true,
-    description: "The ID of the spell to retrieve",
+    description: "The ID of the spell to update",
     example: "507f1f77bcf86cd799439011",
   })
   @ApiParam({
@@ -99,6 +99,36 @@ export class SpellsController {
     required: true,
     description: "The ID of the spell to retrieve",
     example: "507f1f77bcf86cd799439011",
+  })
+  @ApiOkResponse({
+    description: "Spell updated successfully",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(IResponse) },
+        {
+          properties: {
+            data: { $ref: getSchemaPath(Spell) },
+          },
+        },
+      ],
+    },
+  })
+  @ApiResponse({ 
+    status: 400,
+    description: "Validation DTO failed",
+    schema: {
+      allOf: [
+        {
+          example: {
+            message: [
+              "tag must be a number conforming to the specified constraints"
+            ],
+            statusCode: 400,
+            error: "Bad Request"
+          }
+        }
+      ],
+    }
   })
   async update(@Param("id", ParseMongoIdPipe) id: Types.ObjectId, @Body() updateData: UpdateSpellDto): Promise<IResponse<Spell>> {
     const oldSpell: IResponse<Spell> = await this.validateResource(id, "en");

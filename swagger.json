@@ -145,6 +145,78 @@
         "tags": [
           "Spells"
         ]
+      },
+      "patch": {
+        "operationId": "SpellsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the spell to retrieve",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSpellDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Spell updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Spell"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation DTO failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "example": {
+                        "message": [
+                          "tag must be a number conforming to the specified constraints"
+                        ],
+                        "statusCode": 400,
+                        "error": "Bad Request"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a spell by ID",
+        "tags": [
+          "Spells"
+        ]
       }
     },
     "/monsters": {
@@ -217,12 +289,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-10-28T19:28:04.871Z"
+            "example": "2025-11-01T09:21:50.229Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-10-28T19:28:04.871Z"
+            "example": "2025-11-01T09:21:50.230Z"
           },
           "name": {
             "type": "string",
@@ -388,6 +460,23 @@
           "message",
           "data",
           "pagination"
+        ]
+      },
+      "UpdateSpellDto": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "number",
+            "example": 1,
+            "description": "0: Homebrew, 1: Certified by Chariot",
+            "enum": [
+              0,
+              1
+            ]
+          }
+        },
+        "required": [
+          "tag"
         ]
       }
     }

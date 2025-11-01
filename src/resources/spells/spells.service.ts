@@ -135,10 +135,11 @@ export class SpellsService {
   async findOne(id: Types.ObjectId, lang: string) : Promise<IResponse<Spell>> {
     try {
 
+
       let projection: any = {
         tag: 1,
         languages: 1,
-        [`translations.${lang}`]: 1,
+        translations: 1,
         deletedAt: 1,
         createdAt: 1,
         updatedAt: 1,
@@ -153,6 +154,18 @@ export class SpellsService {
         this.logger.error(message);
         throw new NotFoundException(message);
       }
+
+      // Si la langue spécifiée est invalide, on recupère la première langue disponible
+
+      if (!spell.languages.includes(lang)) {
+        lang = spell.languages[0];
+      }
+
+      // On récupère la traduction dans la langue demandée
+      const translation: SpellContent = spell.translations.get(lang);
+
+      spell.translations = new Map<string, SpellContent>();
+      spell.translations.set(lang, translation);
 
       const message: string = `Spell #${id} found in ${end - start}ms`;
       this.logger.log(message);
@@ -173,7 +186,7 @@ export class SpellsService {
   async update(id: Types.ObjectId, oldSpell: Spell, updateData: UpdateSpellDto): Promise<IResponse<Spell>> {
     try {
       const start: number = Date.now();
-      const spell = await this.spellModel.updateOne({ _id: id }, updateData).exec();
+      await this.spellModel.updateOne({ _id: id }, updateData).exec();
       oldSpell.tag = updateData.tag;
       const end: number = Date.now();
 
