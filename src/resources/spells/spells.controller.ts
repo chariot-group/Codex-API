@@ -1,4 +1,4 @@
-import { Controller, Get, BadRequestException, Logger, Query, Param, Post, Req, Body } from "@nestjs/common";
+import { Controller, Get, BadRequestException, Logger, Query, Param, Post, Req, Body, Delete } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiOkResponse, ApiExtraModels, getSchemaPath, ApiParam } from "@nestjs/swagger";
 import { SpellsService } from "@/resources/spells/spells.service";
 import { Types } from "mongoose";
@@ -85,6 +85,7 @@ export class SpellsController {
   })
   @ApiResponse({ status: 404, description: "Spell #ID not found" })
   @ApiResponse({ status: 400, description: "Error while fetching spell #ID: Id is not a valid mongoose id" })
+  @ApiResponse({ status: 410, description: "Spell #ID has been deleted" })
   async findOne(@Param("id", ParseMongoIdPipe) id: Types.ObjectId, @Query() query: langParam): Promise<IResponse<Spell>> {
     const { lang = "en"} = query;
     return this.validateResource(id, lang);
@@ -125,5 +126,36 @@ export class SpellsController {
   })
   async create(@Body() spellDto: CreateSpellDto): Promise<IResponse<Spell>> {
     return this.spellsService.create(spellDto);
+  }
+
+  @Delete(":id")
+  @ApiOperation({ summary: "Delete a spell by ID" })
+  @ApiParam({
+    name: "id",
+    type: String,
+    required: true,
+    description: "The ID of the spell to delete",
+    example: "507f1f77bcf86cd799439011",
+  })
+  @ApiOkResponse({
+    description: "Spell #ID deleted",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(IResponse) },
+        {
+          properties: {
+            data: { $ref: getSchemaPath(Spell) },
+          },
+        },
+      ],
+    },
+  })
+  @ApiResponse({ status: 404, description: "Spell #ID not found" })
+  @ApiResponse({ status: 400, description: "Error while fetching spell #ID: Id is not a valid mongoose id" })
+  @ApiResponse({ status: 410, description: "Spell #ID has been deleted" })
+  async delete(@Param("id", ParseMongoIdPipe) id: Types.ObjectId): Promise<IResponse<Spell>> {
+    const spell: IResponse<Spell> = await this.validateResource(id, "en");
+
+    return this.spellsService.delete(id, spell.data);
   }
 }

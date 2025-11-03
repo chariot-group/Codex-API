@@ -1,4 +1,4 @@
-import { HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
+import { GoneException, HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
 import { Spell } from "@/resources/spells/schemas/spell.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -21,7 +21,7 @@ export class SpellsService {
       const { page = 1, offset = 10, name = "", lang = "" } = paginationSpell;
       const skip = (page - 1) * offset;
 
-      const filters: any = {};
+      const filters: any = { deletedAt: null };
       let projection: any = {
         tag: 1,
         languages: 1,
@@ -154,6 +154,12 @@ export class SpellsService {
         throw new NotFoundException(message);
       }
 
+      if(spell.deletedAt) {
+        const message = `Spell #${id} has been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
       const message: string = `Spell #${id} found in ${end - start}ms`;
       this.logger.log(message);
 
@@ -194,4 +200,29 @@ export class SpellsService {
       throw new InternalServerErrorException(message);
     }
   }
+
+  async delete(id: Types.ObjectId, spell: Spell) : Promise<IResponse<Spell>> {
+    try {
+      const start: number = Date.now();
+      const deleteDate: Date = new Date();
+      await this.spellModel.updateOne({ _id: id }, { deletedAt: deleteDate }).exec();
+      spell.deletedAt = deleteDate;
+      const end: number = Date.now();
+
+      const message: string = `Spell #${id} deleted in ${end - start}ms`;
+      this.logger.log(message);
+
+      return {
+        message,
+        data: this.mapper.calculAvailablesLanguages(spell),
+      };
+
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while deleting spell #${id}: ${error.message}`;
+      this.logger.error(message);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
 }
