@@ -25,8 +25,8 @@
             "in": "query",
             "description": "Page number",
             "schema": {
-              "minimum": 0,
-              "default": 0,
+              "minimum": 1,
+              "default": 1,
               "example": 1,
               "type": "number"
             }
@@ -165,7 +165,7 @@
           },
           {
             "name": "lang",
-            "required": false,
+            "required": true,
             "in": "path",
             "description": "The ISO 2 code of translation",
             "schema": {
@@ -201,9 +201,6 @@
           },
           "404": {
             "description": "Spell #ID not found"
-          },
-          "410": {
-            "description": "Spell #ID has been deleted"
           },
           "410": {
             "description": "Spell #ID has been deleted"
@@ -414,12 +411,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-01T10:10:01.701Z"
+            "example": "2025-11-04T07:10:16.898Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-01T10:10:01.701Z"
+            "example": "2025-11-04T07:10:16.898Z"
           },
           "name": {
             "type": "string",
