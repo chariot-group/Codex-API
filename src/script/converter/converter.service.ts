@@ -14,6 +14,11 @@ import { Speed } from "@/resources/monsters/schemas/stats/sub/speed.schema";
 import { Affinities } from "@/resources/monsters/schemas/affinities/affinities.schema";
 import { Challenge } from "@/resources/monsters/schemas/challenge/challenge.schema";
 import { Profile } from "@/resources/monsters/schemas/profile/profile.schema";
+import { Action } from "@/resources/monsters/schemas/actions/sub/action.schema";
+import { Damage } from "@/resources/monsters/schemas/actions/sub/damage.schema";
+import { Actions } from "@/resources/monsters/schemas/actions/actions.schema";
+import { Save } from "@/resources/monsters/schemas/actions/sub/save.schema";
+import { Usage } from "@/resources/monsters/schemas/actions/sub/usage.schema";
 @Injectable()
 export class ConverterService {
   readonly SERVICE_NAME = this.constructor.name;
@@ -152,6 +157,9 @@ export class ConverterService {
     monstercontent.spellcasting = await this.mapSpellcasting(
       (entry.special_abilities ?? []).find((a: any) => a.name === "Spellcasting"),
     );
+
+    // Mapping des actions
+    monstercontent.actions = this.mapActions(entry);
 
     let tempChallenge = new Challenge();
     tempChallenge.challengeRating = entry.challenge_rating ?? 0;
@@ -353,5 +361,122 @@ export class ConverterService {
     );
 
     return spellDocs.filter(Boolean);
+  }
+
+  private mapAction(sourceAction: any): Action {
+    const action = new Action();
+
+    // Attributs de base
+    action.name = sourceAction.name;
+    action.description = sourceAction.desc;
+
+    // Détermine le type d'action
+    if (sourceAction.attack_bonus) {
+      // Si on a un bonus d'attaque, c'est une attaque d'arme
+      action.type = sourceAction.desc?.toLowerCase().includes("melee") ? "melee" : "ranged";
+      action.attackBonus = sourceAction.attack_bonus;
+    } else if (sourceAction.desc?.toLowerCase().includes("breath")) {
+      action.type = "breath";
+    } else {
+      action.type = "ability"; // Action spéciale par défaut
+    }
+
+    // Gestion de la portée
+    if (sourceAction.desc) {
+      const rangeMatch = sourceAction.desc.match(/reach (\d+) ft\./);
+      if (rangeMatch) {
+        action.range = `${rangeMatch[1]} ft.`;
+      }
+    }
+
+    // Gestion des dégâts
+    action.damage = this.mapDamage(sourceAction.damage?.[0]);
+
+    // Gestion du jet de sauvegarde
+    if (sourceAction.dc) {
+      const save = new Save();
+      save.type = sourceAction.dc.dc_type.name.toLowerCase();
+      save.dc = sourceAction.dc.dc_value;
+      save.successType = sourceAction.dc.success_type;
+      action.save = save;
+    }
+
+    // Gestion des conditions d'utilisation
+    if (sourceAction.usage) {
+      const usage = new Usage();
+      usage.type = sourceAction.usage.type;
+      usage.times = sourceAction.usage.times;
+      usage.dice = sourceAction.usage.dice;
+      usage.minValue = sourceAction.usage.min_value;
+      action.usage = usage;
+    }
+
+    return action;
+  }
+
+  private mapDamage(sourceDamage: any): Damage {
+    if (!sourceDamage) {
+      return new Damage();
+    }
+
+    const damage = new Damage();
+    damage.dice = sourceDamage.damage_dice;
+    damage.type = sourceDamage.damage_type?.name?.toLowerCase();
+
+    return damage;
+  }
+
+  private mapActions(entry: any): Actions {
+    const actions = new Actions();
+
+    // Conversion des actions standards
+    actions.standard = (entry.actions || []).map((action) => {
+      // Cas spécial pour les multiattacks
+      if (action.multiattack_type === "actions") {
+        return this.mapMultiAttack(action);
+      }
+      return this.mapAction(action);
+    });
+
+    // Conversion des actions légendaires
+    actions.legendary = (entry.legendary_actions || []).map((legendaryAction) => {
+      const action = this.mapAction(legendaryAction);
+      action.type = "legendary";
+
+      // Extraction du coût en actions si présent
+      const costMatch = legendaryAction.name.match(/\(Costs (\d+) Actions?\)/i);
+      if (costMatch) {
+        action.name = legendaryAction.name.replace(/\(Costs \d+ Actions?\)/i, "").trim();
+        action.legendaryActionCost = parseInt(costMatch[1], 10);
+      } else {
+        action.legendaryActionCost = 1; // Par défaut, une action légendaire coûte 1 point
+      }
+
+      return action;
+    });
+
+    // Définition du nombre d'actions légendaires par jour
+    // La plupart des monstres ont 3 actions légendaires par tour, sauf indication contraire
+    actions.legendaryActionsPerDay = entry.legendary_actions ? 3 : 0;
+
+    // Conversion des réactions
+    actions.reactions = (entry.reactions || []).map((reaction) => {
+      const action = this.mapAction(reaction);
+      action.type = "reaction";
+      return action;
+    });
+
+    // Les actions de repaire et bonus ne sont pas présentes dans la source
+    actions.lair = [];
+    actions.bonus = [];
+
+    return actions;
+  }
+
+  private mapMultiAttack(sourceAction: any): Action {
+    const action = new Action();
+    action.name = sourceAction.name;
+    action.type = "multiattack";
+    return action;
   }
 }
