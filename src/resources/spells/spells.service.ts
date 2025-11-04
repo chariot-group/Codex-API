@@ -5,6 +5,7 @@ import { Model, Types } from "mongoose";
 import { IResponse, IPaginatedResponse } from "@/common/dtos/reponse.dto";
 import { PaginationSpell } from "@/resources/spells/dtos/find-all.dto";
 import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
+import { UpdateSpellDto } from "@/resources/spells/dtos/update-spell.dto";
 import { CreateSpellDto } from "@/resources/spells/dtos/create-spell.dto";
 import { SpellsMapper } from "@/resources/spells/mappers/spells.mapper";
 
@@ -137,10 +138,11 @@ export class SpellsService {
   async findOne(id: Types.ObjectId, lang: string) : Promise<IResponse<Spell>> {
     try {
 
+
       let projection: any = {
         tag: 1,
         languages: 1,
-        [`translations.${lang}`]: 1,
+        translations: 1,
         deletedAt: 1,
         createdAt: 1,
         updatedAt: 1,
@@ -162,6 +164,18 @@ export class SpellsService {
         throw new GoneException(message);
       }
 
+      // Si la langue spécifiée est invalide, on recupère la première langue disponible
+
+      if (!spell.languages.includes(lang)) {
+        lang = spell.languages[0];
+      }
+
+      // On récupère la traduction dans la langue demandée
+      const translation: SpellContent = spell.translations.get(lang);
+
+      spell.translations = new Map<string, SpellContent>();
+      spell.translations.set(lang, translation);
+
       const message: string = `Spell #${id} found in ${end - start}ms`;
       this.logger.log(message);
 
@@ -173,6 +187,29 @@ export class SpellsService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       const message: string = `Error while fetching spell #${id}: ${error.message}`;
+      this.logger.error(message);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  async update(id: Types.ObjectId, oldSpell: Spell, updateData: UpdateSpellDto): Promise<IResponse<Spell>> {
+    try {
+      const start: number = Date.now();
+      await this.spellModel.updateOne({ _id: id }, updateData).exec();
+      oldSpell.tag = updateData.tag;
+      const end: number = Date.now();
+
+      const message: string = `Spell #${id} updated in ${end - start}ms`;
+      this.logger.log(message);
+
+      return {
+        message,
+        data: oldSpell,
+      };
+
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while updating spell #${id}: ${error.message}`;
       this.logger.error(message);
       throw new InternalServerErrorException(message);
     }

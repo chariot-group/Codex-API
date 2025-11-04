@@ -1,4 +1,16 @@
-import { Controller, Get, BadRequestException, Logger, Query, Param, Post, Req, Body, Delete } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  BadRequestException,
+  Logger,
+  Query,
+  Param,
+  Patch,
+  Body,
+  Post,
+  Req,
+  Delete,
+} from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiOkResponse, ApiExtraModels, getSchemaPath, ApiParam } from "@nestjs/swagger";
 import { SpellsService } from "@/resources/spells/spells.service";
 import { Types } from "mongoose";
@@ -8,6 +20,7 @@ import { IPaginatedResponse, IResponse } from "@/common/dtos/reponse.dto";
 import { PaginationSpell } from "@/resources/spells/dtos/find-all.dto";
 import { langParam } from "@/resources/spells/dtos/find-one.dto";
 import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
+import { UpdateSpellDto } from "@/resources/spells/dtos/update-spell.dto";
 import { CreateSpellDto } from "@/resources/spells/dtos/create-spell.dto";
 
 @ApiExtraModels(Spell, SpellContent, IResponse, IPaginatedResponse)
@@ -59,13 +72,12 @@ export class SpellsController {
     name: "id",
     type: String,
     required: true,
-    description: "The ID of the spell to retrieve",
+    description: "The ID of the spell to update",
     example: "507f1f77bcf86cd799439011",
   })
   @ApiParam({
     name: "lang",
     type: String,
-    required: false,
     description: "The ISO 2 code of translation",
     example: "en",
   })
@@ -86,9 +98,59 @@ export class SpellsController {
   @ApiResponse({ status: 404, description: "Spell #ID not found" })
   @ApiResponse({ status: 400, description: "Error while fetching spell #ID: Id is not a valid mongoose id" })
   @ApiResponse({ status: 410, description: "Spell #ID has been deleted" })
-  async findOne(@Param("id", ParseMongoIdPipe) id: Types.ObjectId, @Query() query: langParam): Promise<IResponse<Spell>> {
-    const { lang = "en"} = query;
+  async findOne(
+    @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
+    @Query() query: langParam,
+  ): Promise<IResponse<Spell>> {
+    const { lang = "en" } = query;
     return this.validateResource(id, lang);
+  }
+
+  @Patch(":id")
+  @ApiOperation({ summary: "Update a spell by ID" })
+  @ApiParam({
+    name: "id",
+    type: String,
+    required: true,
+    description: "The ID of the spell to retrieve",
+    example: "507f1f77bcf86cd799439011",
+  })
+  @ApiOkResponse({
+    description: "Spell updated successfully",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(IResponse) },
+        {
+          properties: {
+            data: { $ref: getSchemaPath(Spell) },
+          },
+        },
+      ],
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Validation DTO failed",
+    schema: {
+      allOf: [
+        {
+          example: {
+            message: ["tag must be a number conforming to the specified constraints"],
+            statusCode: 400,
+            error: "Bad Request",
+          },
+        },
+      ],
+    },
+  })
+  @ApiResponse({ status: 404, description: "Spell #ID not found" })
+  @ApiResponse({ status: 410, description: "Spell #ID has been deleted" })
+  async update(
+    @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
+    @Body() updateData: UpdateSpellDto,
+  ): Promise<IResponse<Spell>> {
+    const oldSpell: IResponse<Spell> = await this.validateResource(id, "en");
+    return this.spellsService.update(id, oldSpell.data, updateData);
   }
 
   @Post()
@@ -106,7 +168,7 @@ export class SpellsController {
       ],
     },
   })
-  @ApiResponse({ 
+  @ApiResponse({
     status: 400,
     description: "Validation DTO failed",
     schema: {
@@ -115,14 +177,14 @@ export class SpellsController {
           example: {
             message: [
               "spellContent.description must be a string",
-              "spellContent.level must be a number conforming to the specified constraints"
+              "spellContent.level must be a number conforming to the specified constraints",
             ],
             statusCode: 400,
-            error: "Bad Request"
-          }
-        }
+            error: "Bad Request",
+          },
+        },
       ],
-    }
+    },
   })
   async create(@Body() spellDto: CreateSpellDto): Promise<IResponse<Spell>> {
     return this.spellsService.create(spellDto);
