@@ -9,6 +9,9 @@ export class Actions {
   @Prop({ type: [Action], default: [] })
   legendary: Action[];
 
+  @Prop()
+  legendaryActionsPerDay?: number;
+
   @Prop({ type: [Action], default: [] })
   lair: Action[];
 
