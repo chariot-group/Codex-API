@@ -19,8 +19,6 @@ export class MonstersService {
       const { page = 1, offset = 10, name = "", lang = "" } = paginationMonster;
       const skip = (page - 1) * offset;
 
-      this.logger.log(`Finding monsters: page=${page}, offset=${offset}, skip='${skip}'`);
-
       const filters: any = { deletedAt: null };
       let projection: any = {
         tag: 1,
@@ -95,20 +93,25 @@ export class MonstersService {
         const decodedName: string = decodeURIComponent(name).toLowerCase();
 
         monsters = monsters.map((monster) => {
-          const filteredTranslations: Map<string, MonsterContent> = new Map();
+          let filteredTranslations: Map<string, MonsterContent> = new Map();
 
           // On parcours toutes les langues
           for (const language of monster.languages) {
             const translation: MonsterContent = monster.translations.get(language);
 
             // Si le nom renseigné dans cette langue match
-            if (translation && translation.name && translation.name.toLowerCase().includes(decodedName)) {
-              filteredTranslations[language] = translation;
+            if (translation && translation.name && translation.name.toLowerCase().includes(decodedName.toLowerCase())) {
+              filteredTranslations.set(language, translation);
             }
           }
 
           // On remplace par les traduction qui on un nom qui match avec la recherche
           monster.translations = filteredTranslations;
+
+          this.logger.log(JSON.stringify(monsters));
+
+          this.logger.log(`Filtered translations: ${JSON.stringify(filteredTranslations)}`);
+
           return monster;
         }) as Monster[];
       }

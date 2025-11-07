@@ -1,10 +1,12 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
 import { MonstersService } from "@/resources/monsters/monsters.service";
-import { ApiOkResponse, ApiOperation, getSchemaPath } from "@nestjs/swagger";
-import { IPaginatedResponse } from "@/common/dtos/reponse.dto";
+import { ApiExtraModels, ApiOkResponse, ApiOperation, getSchemaPath } from "@nestjs/swagger";
+import { IPaginatedResponse, IResponse } from "@/common/dtos/reponse.dto";
 import { Monster } from "@/resources/monsters/schemas/monster.schema";
-import { PaginationMonster } from "./dtos/find-all.dto";
+import { MonsterContent } from "@/resources/monsters/schemas/monster-content.schema";
+import { PaginationMonster } from "@/resources/monsters/dtos/find-all.dto";
 
+@ApiExtraModels(Monster, MonsterContent, IResponse, IPaginatedResponse)
 @Controller("monsters")
 export class MonstersController {
   constructor(private readonly monstersService: MonstersService) {}
