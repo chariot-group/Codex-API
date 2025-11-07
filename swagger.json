@@ -53,6 +53,26 @@
               "example": "-createdAt",
               "type": "string"
             }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Filter spells by name",
+            "schema": {
+              "example": "Fireball",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "description": "Filter by language code (ISO 2 code)",
+            "schema": {
+              "example": "en",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -379,6 +399,26 @@
               "example": "-createdAt",
               "type": "string"
             }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Filter monsters by name",
+            "schema": {
+              "example": "Goblin",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "description": "Filter by language code (ISO 2 code)",
+            "schema": {
+              "example": "en",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -469,12 +509,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-07T07:58:35.904Z"
+            "example": "2025-11-07T08:04:53.345Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-07T07:58:35.904Z"
+            "example": "2025-11-07T08:04:53.345Z"
           },
           "name": {
             "type": "string",
@@ -1071,12 +1111,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-07T07:58:36.156Z"
+            "example": "2025-11-07T08:04:53.598Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-07T07:58:36.156Z"
+            "example": "2025-11-07T08:04:53.598Z"
           },
           "name": {
             "type": "string",
