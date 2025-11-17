@@ -1,18 +1,100 @@
-import { HttpException, Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Monster } from "@/resources/monsters/schemas/monster.schema";
-import { Model } from "mongoose";
+import { Spell } from "@/resources/spells/schemas/spell.schema";
+import { Model, Types } from "mongoose";
 import { PaginationMonster } from "@/resources/monsters/dtos/find-all.dto";
 import { MonsterContent } from "@/resources/monsters/schemas/monster-content.schema";
 import { MonstersMapper } from "@/resources/monsters/mappers/monsters.mapper";
+import { CreateMonsterDto } from "@/resources/monsters/dtos/create-monster.dto";
+import { IResponse } from "@/common/dtos/reponse.dto";
 
 @Injectable()
 export class MonstersService {
-  constructor(@InjectModel(Monster.name) private monsterModel: Model<Monster>) {}
+  constructor(
+    @InjectModel(Monster.name) private monsterModel: Model<Monster>,
+    @InjectModel(Spell.name) private spellModel: Model<Spell>,
+  ) {}
 
   private readonly SERVICE_NAME = MonstersService.name;
   private readonly logger = new Logger(this.SERVICE_NAME);
   private readonly mapper = new MonstersMapper();
+
+  /**
+   * Validate that all spell IDs exist in the database
+   * @param spellIds Array of spell ObjectIds to validate
+   * @throws NotFoundException if any spell is not found
+   * @throws BadRequestException if any spell ID is invalid
+   */
+  private async validateSpells(spellIds: Types.ObjectId[]): Promise<void> {
+    if (!spellIds || spellIds.length === 0) {
+      return;
+    }
+
+    try {
+      const invalidIds = spellIds.filter((id) => !Types.ObjectId.isValid(id));
+      if (invalidIds.length > 0) {
+        const message = `Invalid spell IDs: ${invalidIds.join(", ")}`;
+        this.logger.error(message);
+        throw new BadRequestException(message);
+      }
+
+      // Find all spells in one query
+      const existingSpells = await this.spellModel
+        .find({
+          _id: { $in: spellIds },
+          deletedAt: null,
+        })
+        .select("_id")
+        .exec();
+
+      // Check if all spells were found
+      if (existingSpells.length !== spellIds.length) {
+        const foundIds = existingSpells.map((spell) => spell._id.toString());
+        const missingIds = spellIds.filter((id) => !foundIds.includes(id.toString()));
+        const message = `Spells not found: ${missingIds.join(", ")}`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      this.logger.log(`Successfully validated ${spellIds.length} spell(s)`);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message = "Error while validating spells";
+      this.logger.error(`${message}: ${error}`);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  /**
+   * Extract all spell IDs from monster spellcasting arrays
+   * @param monster Monster entity to extract spell IDs from
+   * @returns Array of unique spell ObjectIds
+   */
+  private extractSpellIds(monster: Monster): Types.ObjectId[] {
+    const spellIds: Types.ObjectId[] = [];
+
+    // Iterate through all translations
+    for (const [, content] of monster.translations) {
+      if (content.spellcasting && content.spellcasting.length > 0) {
+        for (const spellcasting of content.spellcasting) {
+          if (spellcasting.spells && spellcasting.spells.length > 0) {
+            spellIds.push(...spellcasting.spells);
+          }
+        }
+      }
+    }
+
+    // Remove duplicates by converting to Set and back to Array
+    return [...new Set(spellIds.map((id) => id.toString()))].map((id) => new Types.ObjectId(id));
+  }
 
   async findAll(paginationMonster: PaginationMonster) {
     try {
@@ -129,13 +211,44 @@ export class MonstersService {
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      const message: string = `Error while fetching monsters: ${error.message}`;
-      this.logger.error(message);
+      const message: string = "An error occurred while creating monster";
+      this.logger.error(`${message}: ${error}`);
       throw new InternalServerErrorException(message);
     }
   }
 
   findOne(id: number) {
     return `This action returns a #${id} monster`;
+  }
+
+  async create(createMonsterDto: CreateMonsterDto): Promise<IResponse<Monster>> {
+    try {
+      const monster: Monster = this.mapper.dtoToEntity(createMonsterDto);
+
+      // Extract and validate all spell IDs
+      const spellIds = this.extractSpellIds(monster);
+      if (spellIds.length > 0) {
+        this.logger.log(`Validating ${spellIds.length} spell(s) for monster`);
+        await this.validateSpells(spellIds);
+      }
+
+      const start: number = Date.now();
+      const createdMonster = new this.monsterModel(monster);
+      const savedMonster = await createdMonster.save();
+      const end: number = Date.now();
+
+      const message: string = `Monster #${savedMonster._id} created in ${end - start}ms`;
+      this.logger.log(message);
+
+      return {
+        message,
+        data: this.mapper.calculAvailablesLanguages(savedMonster),
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = "An error occurred while creating monster";
+      this.logger.error(`${message}: ${error}`);
+      throw new InternalServerErrorException(message);
+    }
   }
 }

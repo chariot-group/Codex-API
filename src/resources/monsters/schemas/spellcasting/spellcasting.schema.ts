@@ -1,6 +1,6 @@
 import { Prop, Schema } from "@nestjs/mongoose";
 import { SchemaFactory } from "@nestjs/mongoose";
-import { Schema as MongooseSchema } from "mongoose";
+import { Schema as MongooseSchema, Types } from "mongoose";
 import { Spell } from "@/resources/spells/schemas/spell.schema";
 
 @Schema({ _id: false })
@@ -24,13 +24,13 @@ export class Spellcasting {
       { _id: false },
     ),
   })
-  spellSlotsByLevel?: Map<number, { total?: number; used?: number }>;
+  spellSlotsByLevel?: Map<string, { total?: number; used?: number }>;
 
   @Prop({ default: 0 })
   totalSlots: number;
 
-  @Prop({ type: [Spell], default: [] })
-  spells: Spell[];
+  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: "Spell" }], default: [] })
+  spells: Types.ObjectId[];
 }
 
 export const SpellcastingSchema = SchemaFactory.createForClass(Spellcasting);
