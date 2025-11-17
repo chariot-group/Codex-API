@@ -147,12 +147,6 @@ export class SpellsController {
       }
     }
 
-    if (oldSpell.data.translations.has("srd")) {
-      const message = `Spell #${id} is in srd and cannot be modified`;
-      this.logger.error(message);
-      throw new ForbiddenException(message);
-    }
-
     return this.spellsService.update(id, oldSpell.data, updateData);
   }
 
