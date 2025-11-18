@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Logger, Param, Query } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Logger, Param, Post, Query } from "@nestjs/common";
 import { MonstersService } from "@/resources/monsters/monsters.service";
 import { ApiExtraModels, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, getSchemaPath } from "@nestjs/swagger";
 import { IPaginatedResponse, IResponse } from "@/common/dtos/reponse.dto";
@@ -90,5 +90,72 @@ export class MonstersController {
   ): Promise<IResponse<Monster>> {
     const { lang = "en" } = query;
     return this.validateResource(id, lang);
+  }
+
+  @Post()
+  @ApiOperation({ summary: "Create a new monster" })
+  @ApiOkResponse({
+    description: "Monster created successfully",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(IResponse) },
+        {
+          properties: {
+            data: { $ref: getSchemaPath(Monster) },
+          },
+        },
+      ],
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Validation DTO failed",
+    schema: {
+      allOf: [
+        {
+          example: {
+            message: [
+              "monsterContent.description must be a string",
+              "monsterContent.level must be a number conforming to the specified constraints",
+            ],
+            statusCode: 400,
+            error: "Bad Request",
+          },
+        },
+      ],
+    },
+  })
+  async create(@Body() CreateMonsterDto: CreateMonsterDto): Promise<IResponse<Monster>> {
+    return this.monstersService.create(CreateMonsterDto);
+  }
+
+  @Delete(":id")
+  @ApiOperation({ summary: "Delete a monster by ID" })
+  @ApiParam({
+    name: "id",
+    type: String,
+    required: true,
+    description: "The ID of the monster to delete",
+    example: "507f1f77bcf86cd799439011",
+  })
+  @ApiOkResponse({
+    description: "Monster #ID deleted",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(IResponse) },
+        {
+          properties: {
+            data: { $ref: getSchemaPath(Monster) },
+          },
+        },
+      ],
+    },
+  })
+  @ApiResponse({ status: 404, description: "Monster #ID not found" })
+  @ApiResponse({ status: 400, description: "Error while fetching monster #ID: Id is not a valid mongoose id" })
+  @ApiResponse({ status: 410, description: "Monster #ID has been deleted" })
+  async delete(@Param("id", ParseMongoIdPipe) id: Types.ObjectId): Promise<IResponse<Monster>> {
+    const monster: IResponse<Monster> = await this.validateResource(id, "en");
+    return this.monstersService.delete(id, monster.data);
   }
 }
