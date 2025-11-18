@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  GoneException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -85,7 +86,7 @@ export class MonstersService {
     try {
       // Extract all spell IDs from the monster
       const spellIds = this.extractSpellIds(monster);
-      
+
       if (spellIds.length === 0) {
         return monster;
       }
@@ -113,11 +114,11 @@ export class MonstersService {
 
               for (const spellId of spellcasting.spells) {
                 const spell = spellsMap.get(spellId.toString());
-                
+
                 if (spell) {
                   // Try to get spell content in the target language first
                   let spellContent: SpellContent | undefined = spell.translations.get(targetLang);
-                  
+
                   // If not available in target language, use the first available language
                   if (!spellContent && spell.languages.length > 0) {
                     spellContent = spell.translations.get(spell.languages[0]);
@@ -301,8 +302,58 @@ export class MonstersService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} monster`;
+  async findOne(id: Types.ObjectId, lang: string): Promise<IResponse<Monster>> {
+    try {
+      let projection: any = {
+        tag: 1,
+        languages: 1,
+        translations: 1,
+        deletedAt: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      };
+
+      const start: number = Date.now();
+      const monster: Monster = await this.monsterModel.findById(id).select(projection).exec();
+      const end: number = Date.now();
+
+      if (!monster) {
+        const message = `Monster #${id} not found`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      if (monster.deletedAt) {
+        const message = `Monster #${id} has been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
+      // Si la langue spécifiée est invalide, on recupère la première langue disponible
+
+      if (!monster.languages.includes(lang)) {
+        lang = monster.languages[0];
+      }
+
+      // On récupère la traduction dans la langue demandée
+      const translation: MonsterContent = monster.translations.get(lang);
+
+      monster.translations = new Map<string, MonsterContent>();
+      monster.translations.set(lang, translation);
+
+      const message: string = `Monster #${id} found in ${end - start}ms`;
+      this.logger.log(message);
+
+      return {
+        message,
+        data: this.mapper.calculAvailablesLanguages(monster),
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while fetching monster #${id}: ${error.message}`;
+      this.logger.error(message);
+      throw new InternalServerErrorException(message);
+    }
   }
 
   async create(createMonsterDto: CreateMonsterDto): Promise<IResponse<Monster>> {
