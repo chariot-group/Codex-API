@@ -1,7 +1,746 @@
+import { Test, TestingModule } from "@nestjs/testing";
+import { MonstersService } from "./monsters.service";
+import { getModelToken } from "@nestjs/mongoose";
+import { Monster } from "./schemas/monster.schema";
+import { Spell } from "../spells/schemas/spell.schema";
+import { InternalServerErrorException, NotFoundException, GoneException, BadRequestException } from "@nestjs/common";
+import { Types } from "mongoose";
 
-describe("MonstersService", () => {
-  
-  it('default', async () => {
-    expect(true).toEqual(true);
+describe("MonstersService - create", () => {
+  let service: MonstersService;
+  let monsterModel: any;
+  let spellModel: any;
+
+  const mockCreateDto = {
+    lang: "en",
+    monsterContent: {
+      name: "Goblin",
+      stats: {
+        size: 1,
+        maxHitPoints: 7,
+      },
+    },
+  };
+
+  const mockCreatedMonster = {
+    _id: new Types.ObjectId(),
+    tag: 1,
+    languages: ["en"],
+    translations: new Map([["en", { name: "Goblin" }]]),
+  };
+
+  beforeEach(async () => {
+    monsterModel = {
+      constructor: jest.fn(),
+    };
+
+    spellModel = {
+      find: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MonstersService,
+        { provide: getModelToken(Monster.name), useValue: monsterModel },
+        { provide: getModelToken(Spell.name), useValue: spellModel },
+      ],
+    }).compile();
+
+    service = module.get<MonstersService>(MonstersService);
+  });
+
+  it("should create a monster successfully", async () => {
+    const fakeInstance = { save: jest.fn().mockResolvedValue(mockCreatedMonster) };
+
+    const ModelFn: any = function () {
+      return fakeInstance;
+    };
+    ModelFn.prototype = {};
+    (service as any).monsterModel = ModelFn;
+
+    spellModel.exec.mockResolvedValue([]);
+
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
+
+    const result = await service.create(mockCreateDto as any);
+
+    expect(result.data).toBeDefined();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/created in \d+ms/));
+
+    logSpy.mockRestore();
+  });
+
+  it("should create a monster with spells", async () => {
+    const spellId = new Types.ObjectId();
+    const dtoWithSpells = {
+      lang: "en",
+      monsterContent: {
+        name: "Wizard Goblin",
+        spellcasting: [
+          {
+            ability: "intelligence",
+            saveDC: 12,
+            spells: [spellId.toString()],
+          },
+        ],
+      },
+    };
+
+    const fakeInstance = {
+      save: jest.fn().mockResolvedValue({
+        ...mockCreatedMonster,
+        translations: new Map([
+          [
+            "en",
+            {
+              name: "Wizard Goblin",
+              spellcasting: [
+                {
+                  ability: "intelligence",
+                  saveDC: 12,
+                  spells: [spellId],
+                },
+              ],
+            },
+          ],
+        ]),
+      }),
+    };
+
+    const ModelFn: any = function () {
+      return fakeInstance;
+    };
+    ModelFn.prototype = {};
+    (service as any).monsterModel = ModelFn;
+
+    spellModel.exec.mockResolvedValue([{ _id: spellId }]);
+
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
+
+    const result = await service.create(dtoWithSpells as any);
+
+    expect(result.data).toBeDefined();
+    expect(spellModel.find).toHaveBeenCalled();
+
+    logSpy.mockRestore();
+  });
+
+  it("should throw InternalServerErrorException for invalid spell IDs during mapping", async () => {
+    const invalidSpellId = "invalid-id";
+    const dtoWithInvalidSpells = {
+      lang: "en",
+      monsterContent: {
+        name: "Bad Wizard",
+        spellcasting: [
+          {
+            ability: "intelligence",
+            saveDC: 12,
+            spells: [invalidSpellId],
+          },
+        ],
+      },
+    };
+
+    const fakeInstance = { save: jest.fn() };
+    const ModelFn: any = function () { return fakeInstance; };
+    ModelFn.prototype = {};
+    (service as any).monsterModel = ModelFn;
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    // The mapper will fail when trying to create ObjectId from invalid string
+    // This gets caught and wrapped in InternalServerErrorException
+    await expect(service.create(dtoWithInvalidSpells as any)).rejects.toThrow(InternalServerErrorException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw NotFoundException for non-existent spell IDs", async () => {
+    const spellId = new Types.ObjectId();
+    const dtoWithNonExistentSpells = {
+      lang: "en",
+      monsterContent: {
+        name: "Bad Wizard",
+        spellcasting: [
+          {
+            ability: "intelligence",
+            saveDC: 12,
+            spells: [spellId.toString()],
+          },
+        ],
+      },
+    };
+
+    spellModel.exec.mockResolvedValue([]); // No spells found
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.create(dtoWithNonExistentSpells as any)).rejects.toThrow(NotFoundException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should handle errors during creation", async () => {
+    const fakeInstance = { save: jest.fn().mockRejectedValue(new Error("DB fail")) };
+    const ModelFn: any = function () {
+      return fakeInstance;
+    };
+    ModelFn.prototype = {};
+    (service as any).monsterModel = ModelFn;
+
+    spellModel.exec.mockResolvedValue([]);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.create({} as any)).rejects.toThrow(InternalServerErrorException);
+
+    expect(errSpy).toHaveBeenCalledWith(expect.stringMatching(/An error occurred while creating monster/));
+
+    errSpy.mockRestore();
+  });
+});
+
+describe("MonstersService - findAll", () => {
+  let service: MonstersService;
+  let monsterModel: any;
+  let spellModel: any;
+
+  const mockMonster = {
+    _id: new Types.ObjectId(),
+    tag: 2,
+    languages: ["en", "fr"],
+    translations: new Map([
+      ["en", { name: "Goblin" }],
+      ["fr", { name: "Gobelin" }],
+    ]),
+    deletedAt: null,
+  };
+
+  beforeEach(async () => {
+    monsterModel = {
+      countDocuments: jest.fn(),
+      find: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+      distinct: jest.fn(),
+    };
+
+    spellModel = {
+      find: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MonstersService,
+        { provide: getModelToken(Monster.name), useValue: monsterModel },
+        { provide: getModelToken(Spell.name), useValue: spellModel },
+      ],
+    }).compile();
+
+    service = module.get<MonstersService>(MonstersService);
+  });
+
+  it("should return monsters with pagination", async () => {
+    monsterModel.countDocuments.mockResolvedValue(1);
+    monsterModel.exec.mockResolvedValue([mockMonster]);
+
+    const result = await service.findAll({ page: 1, offset: 10 });
+
+    expect(monsterModel.countDocuments).toHaveBeenCalled();
+    expect(monsterModel.skip).toHaveBeenCalledWith(0);
+    expect(monsterModel.limit).toHaveBeenCalledWith(10);
+
+    expect(result).toHaveProperty("pagination");
+    expect(result.data.length).toBe(1);
+  });
+
+  it("should search by name and lang", async () => {
+    monsterModel.countDocuments.mockResolvedValue(1);
+    monsterModel.exec.mockResolvedValue([mockMonster]);
+
+    const result = await service.findAll({ name: "Goblin", lang: "en" });
+
+    expect(monsterModel.countDocuments).toHaveBeenCalled();
+    expect(result.pagination.totalItems).toBe(1);
+  });
+
+  it("should search by name in all languages", async () => {
+    monsterModel.distinct.mockResolvedValue(["en", "fr"]);
+    monsterModel.countDocuments.mockResolvedValue(1);
+    monsterModel.exec.mockResolvedValue([mockMonster]);
+
+    const res = await service.findAll({ name: "Goblin" });
+
+    expect(monsterModel.distinct).toHaveBeenCalledWith("languages");
+    expect(res.data).toBeDefined();
+  });
+
+  it("should filter translations when searching by name without lang", async () => {
+    const monsterWithMultipleTranslations = {
+      _id: new Types.ObjectId(),
+      tag: 3,
+      languages: ["en", "fr", "es"],
+      translations: new Map([
+        ["en", { name: "Dragon" }],
+        ["fr", { name: "Gobelin" }],
+        ["es", { name: "Dragon" }],
+      ]),
+      deletedAt: null,
+    };
+
+    monsterModel.distinct.mockResolvedValue(["en", "fr", "es"]);
+    monsterModel.countDocuments.mockResolvedValue(1);
+    monsterModel.exec.mockResolvedValue([monsterWithMultipleTranslations]);
+
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
+
+    const res = await service.findAll({ name: "Dragon" });
+
+    expect(monsterModel.distinct).toHaveBeenCalledWith("languages");
+    expect(res.data).toBeDefined();
+    expect(logSpy).toHaveBeenCalled();
+
+    logSpy.mockRestore();
+  });
+
+  it("should search by languages", async () => {
+    monsterModel.distinct.mockResolvedValue(["en", "fr"]);
+    monsterModel.countDocuments.mockResolvedValue(1);
+    monsterModel.exec.mockResolvedValue([mockMonster]);
+
+    const res = await service.findAll({ lang: "fr" });
+
+    expect(res.data).toBeDefined();
+  });
+
+  it("should search with sort", async () => {
+    monsterModel.distinct.mockResolvedValue(["en", "fr"]);
+    monsterModel.countDocuments.mockResolvedValue(1);
+    monsterModel.exec.mockResolvedValue([mockMonster]);
+
+    const res = await service.findAll({ lang: "fr", sort: "-tag" });
+
+    expect(res.data).toBeDefined();
+  });
+
+  it("should search with sort ascending", async () => {
+    monsterModel.distinct.mockResolvedValue(["en", "fr"]);
+    monsterModel.countDocuments.mockResolvedValue(1);
+    monsterModel.exec.mockResolvedValue([mockMonster]);
+
+    const res = await service.findAll({ lang: "fr", sort: "tag" });
+
+    expect(res.data).toBeDefined();
+  });
+
+  it("should throw InternalServerErrorException on error", async () => {
+    monsterModel.countDocuments.mockRejectedValue(new Error("DB_ERR"));
+
+    await expect(service.findAll({})).rejects.toThrow(InternalServerErrorException);
+  });
+
+  it("should rethrow HttpException errors", async () => {
+    const httpError = new NotFoundException("Custom not found");
+    monsterModel.countDocuments.mockRejectedValue(httpError);
+
+    await expect(service.findAll({})).rejects.toThrow(NotFoundException);
+  });
+});
+
+describe("MonstersService - findOne", () => {
+  let service: MonstersService;
+  let monsterModel: any;
+  let spellModel: any;
+
+  const id = new Types.ObjectId();
+
+  const mockMonster = {
+    _id: id,
+    tag: 2,
+    languages: ["en", "fr"],
+    translations: new Map([
+      ["en", { name: "Goblin" }],
+      ["fr", { name: "Gobelin" }],
+    ]),
+    deletedAt: null,
+  };
+
+  beforeEach(async () => {
+    monsterModel = {
+      findById: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    spellModel = {
+      find: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MonstersService,
+        { provide: getModelToken(Monster.name), useValue: monsterModel },
+        { provide: getModelToken(Spell.name), useValue: spellModel },
+      ],
+    }).compile();
+
+    service = module.get<MonstersService>(MonstersService);
+  });
+
+  it("should return a monster with filtered translation", async () => {
+    monsterModel.exec.mockResolvedValue(mockMonster);
+
+    const result = await service.findOne(id, "fr");
+
+    expect(monsterModel.findById).toHaveBeenCalledWith(id);
+    expect(result.data).toBeDefined();
+  });
+
+  it("should fallback to first language when lang invalid", async () => {
+    monsterModel.exec.mockResolvedValue(mockMonster);
+
+    const result = await service.findOne(id, "jp");
+
+    expect(result.data).toBeDefined();
+  });
+
+  it("should throw NotFoundException if monster not found", async () => {
+    monsterModel.exec.mockResolvedValue(null);
+
+    await expect(service.findOne(id, "en")).rejects.toThrow(NotFoundException);
+  });
+
+  it("should throw GoneException if deleted", async () => {
+    monsterModel.exec.mockResolvedValue({ ...mockMonster, deletedAt: new Date() });
+
+    await expect(service.findOne(id, "en")).rejects.toThrow(GoneException);
+  });
+
+  it("should throw InternalServerErrorException on DB error", async () => {
+    monsterModel.exec.mockRejectedValue(new Error("DB fail"));
+
+    await expect(service.findOne(id, "en")).rejects.toThrow(InternalServerErrorException);
+  });
+});
+
+describe("MonstersService - validateSpells", () => {
+  let service: MonstersService;
+  let monsterModel: any;
+  let spellModel: any;
+
+  beforeEach(async () => {
+    monsterModel = {};
+
+    spellModel = {
+      find: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MonstersService,
+        { provide: getModelToken(Monster.name), useValue: monsterModel },
+        { provide: getModelToken(Spell.name), useValue: spellModel },
+      ],
+    }).compile();
+
+    service = module.get<MonstersService>(MonstersService);
+  });
+
+  it("should validate spells successfully", async () => {
+    const spellIds = [new Types.ObjectId(), new Types.ObjectId()];
+    spellModel.exec.mockResolvedValue([{ _id: spellIds[0] }, { _id: spellIds[1] }]);
+
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
+
+    await (service as any).validateSpells(spellIds);
+
+    expect(spellModel.find).toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Successfully validated"));
+
+    logSpy.mockRestore();
+  });
+
+  it("should handle empty spell array", async () => {
+    await (service as any).validateSpells([]);
+
+    expect(spellModel.find).not.toHaveBeenCalled();
+  });
+
+  it("should throw BadRequestException for invalid spell IDs", async () => {
+    const invalidIds = ["invalid-id" as any];
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect((service as any).validateSpells(invalidIds)).rejects.toThrow(BadRequestException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw NotFoundException for missing spells", async () => {
+    const spellIds = [new Types.ObjectId(), new Types.ObjectId()];
+    spellModel.exec.mockResolvedValue([{ _id: spellIds[0] }]); // Only one found
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect((service as any).validateSpells(spellIds)).rejects.toThrow(NotFoundException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw InternalServerErrorException on DB error", async () => {
+    const spellIds = [new Types.ObjectId()];
+    spellModel.exec.mockRejectedValue(new Error("DB fail"));
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect((service as any).validateSpells(spellIds)).rejects.toThrow(InternalServerErrorException);
+
+    errSpy.mockRestore();
+  });
+});
+
+describe("MonstersService - extractSpellIds", () => {
+  let service: MonstersService;
+  let monsterModel: any;
+  let spellModel: any;
+
+  beforeEach(async () => {
+    monsterModel = {};
+    spellModel = {};
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MonstersService,
+        { provide: getModelToken(Monster.name), useValue: monsterModel },
+        { provide: getModelToken(Spell.name), useValue: spellModel },
+      ],
+    }).compile();
+
+    service = module.get<MonstersService>(MonstersService);
+  });
+
+  it("should extract spell IDs from monster", () => {
+    const spellId1 = new Types.ObjectId();
+    const spellId2 = new Types.ObjectId();
+
+    const monster = {
+      translations: new Map([
+        [
+          "en",
+          {
+            spellcasting: [
+              {
+                spells: [spellId1, spellId2],
+              },
+            ],
+          },
+        ],
+      ]),
+    } as any;
+
+    const result = (service as any).extractSpellIds(monster);
+
+    expect(result).toHaveLength(2);
+    expect(result.map((id: Types.ObjectId) => id.toString())).toContain(spellId1.toString());
+    expect(result.map((id: Types.ObjectId) => id.toString())).toContain(spellId2.toString());
+  });
+
+  it("should return empty array for monster without spells", () => {
+    const monster = {
+      translations: new Map([["en", { name: "Goblin" }]]),
+    } as any;
+
+    const result = (service as any).extractSpellIds(monster);
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("should handle duplicate spell IDs", () => {
+    const spellId = new Types.ObjectId();
+
+    const monster = {
+      translations: new Map([
+        [
+          "en",
+          {
+            spellcasting: [
+              {
+                spells: [spellId],
+              },
+            ],
+          },
+        ],
+        [
+          "fr",
+          {
+            spellcasting: [
+              {
+                spells: [spellId],
+              },
+            ],
+          },
+        ],
+      ]),
+    } as any;
+
+    const result = (service as any).extractSpellIds(monster);
+
+    expect(result).toHaveLength(1);
+  });
+});
+
+describe("MonstersService - populateSpells", () => {
+  let service: MonstersService;
+  let monsterModel: any;
+  let spellModel: any;
+
+  beforeEach(async () => {
+    monsterModel = {};
+
+    spellModel = {
+      find: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MonstersService,
+        { provide: getModelToken(Monster.name), useValue: monsterModel },
+        { provide: getModelToken(Spell.name), useValue: spellModel },
+      ],
+    }).compile();
+
+    service = module.get<MonstersService>(MonstersService);
+  });
+
+  it("should populate spells in monster", async () => {
+    const spellId = new Types.ObjectId();
+
+    const monster = {
+      translations: new Map([
+        [
+          "en",
+          {
+            spellcasting: [
+              {
+                spells: [spellId],
+              },
+            ],
+          },
+        ],
+      ]),
+    };
+
+    const mockSpell = {
+      _id: spellId,
+      languages: ["en"],
+      translations: new Map([
+        [
+          "en",
+          {
+            name: "Fireball",
+            level: 3,
+            description: "A ball of fire",
+            srd: true,
+          },
+        ],
+      ]),
+    };
+
+    spellModel.exec.mockResolvedValue([mockSpell]);
+
+    const result = await (service as any).populateSpells(monster, "en");
+
+    expect(result.translations.get("en").spellcasting[0].spells[0]).toHaveProperty("name", "Fireball");
+  });
+
+  it("should return monster unchanged if no spells", async () => {
+    const monster = {
+      translations: new Map([["en", { name: "Goblin" }]]),
+    };
+
+    const result = await (service as any).populateSpells(monster, "en");
+
+    expect(result).toEqual(monster);
+  });
+
+  it("should fallback to first language if target lang not available", async () => {
+    const spellId = new Types.ObjectId();
+
+    const monster = {
+      translations: new Map([
+        [
+          "en",
+          {
+            spellcasting: [
+              {
+                spells: [spellId],
+              },
+            ],
+          },
+        ],
+      ]),
+    };
+
+    const mockSpell = {
+      _id: spellId,
+      languages: ["fr"],
+      translations: new Map([
+        [
+          "fr",
+          {
+            name: "Boule de feu",
+            level: 3,
+            description: "Une boule de feu",
+            srd: false,
+          },
+        ],
+      ]),
+    };
+
+    spellModel.exec.mockResolvedValue([mockSpell]);
+
+    const result = await (service as any).populateSpells(monster, "en");
+
+    expect(result.translations.get("en").spellcasting[0].spells[0]).toHaveProperty("name", "Boule de feu");
+  });
+
+  it("should handle errors gracefully", async () => {
+    const monster = {
+      translations: new Map([
+        [
+          "en",
+          {
+            spellcasting: [
+              {
+                spells: [new Types.ObjectId()],
+              },
+            ],
+          },
+        ],
+      ]),
+    };
+
+    spellModel.exec.mockRejectedValue(new Error("DB error"));
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    const result = await (service as any).populateSpells(monster, "en");
+
+    expect(result).toEqual(monster);
+    expect(errSpy).toHaveBeenCalled();
+
+    errSpy.mockRestore();
   });
 });
