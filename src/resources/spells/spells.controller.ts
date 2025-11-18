@@ -73,7 +73,7 @@ export class SpellsController {
     name: "id",
     type: String,
     required: true,
-    description: "The ID of the spell to update",
+    description: "The ID of the spell to get",
     example: "507f1f77bcf86cd799439011",
   })
   @ApiParam({
@@ -117,7 +117,7 @@ export class SpellsController {
     name: "id",
     type: String,
     required: true,
-    description: "The ID of the spell to retrieve",
+    description: "The ID of the spell to update",
     example: "507f1f77bcf86cd799439011",
   })
   @ApiOkResponse({

@@ -7,6 +7,7 @@ import {
   Get,
   Logger,
   Param,
+  Patch,
   Post,
   Query,
 } from "@nestjs/common";
@@ -21,6 +22,7 @@ import { ParseMongoIdPipe } from "@/common/pipes/parse-mong-id.pipe";
 import { Types } from "mongoose";
 import { langParam } from "@/resources/monsters/dtos/find-one.dto";
 import { ProblemDetailsDto } from "@/common/dtos/errors.dto";
+import { UpdateMonsterDto } from "@/resources/monsters/dtos/update-monster.dto";
 
 @ApiExtraModels(Monster, MonsterContent, IResponse, IPaginatedResponse)
 @Controller("monsters")
@@ -180,5 +182,66 @@ export class MonstersController {
     }
 
     return this.monstersService.delete(id, monster.data);
+  }
+
+  @Patch(":id")
+  @ApiOperation({ summary: "Update a monster by ID" })
+  @ApiParam({
+    name: "id",
+    type: String,
+    required: true,
+    description: "The ID of the monster to update",
+    example: "507f1f77bcf86cd799439011",
+  })
+  @ApiOkResponse({
+    description: "Monster updated successfully",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(IResponse) },
+        {
+          properties: {
+            data: { $ref: getSchemaPath(Monster) },
+          },
+        },
+      ],
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Validation error",
+    type: ProblemDetailsDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Cannot update monster #ID: it has at least one SRD translation",
+    type: ProblemDetailsDto,
+  })
+  @ApiResponse({ status: 404, description: "Spell #ID not found", type: ProblemDetailsDto })
+  @ApiResponse({ status: 410, description: "Spell #ID has been deleted", type: ProblemDetailsDto })
+  async update(
+    @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
+    @Body() updateData: UpdateMonsterDto,
+  ): Promise<IResponse<Monster>> {
+    const oldMonster: IResponse<Monster> = await this.validateResource(id, "en");
+
+    const hasSrdTranslation = Array.from(oldMonster.data.translations.values()).some(
+      (translation) => translation.srd === true,
+    );
+
+    if (hasSrdTranslation) {
+      const message = `Cannot update monster #${id}: it has at least one SRD translation`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
+    }
+
+    for (const [lang, translation] of oldMonster.data.translations) {
+      if (translation.srd) {
+        const message = `Monster #${id} is in srd and cannot be modified`;
+        this.logger.error(message);
+        throw new ForbiddenException(message);
+      }
+    }
+
+    return this.monstersService.update(id, oldMonster.data, updateData);
   }
 }
