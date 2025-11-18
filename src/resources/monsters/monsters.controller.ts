@@ -1,4 +1,15 @@
-import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Logger, Param, Post, Query } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Logger,
+  Param,
+  Post,
+  Query,
+} from "@nestjs/common";
 import { MonstersService } from "@/resources/monsters/monsters.service";
 import { ApiExtraModels, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, getSchemaPath } from "@nestjs/swagger";
 import { IPaginatedResponse, IResponse } from "@/common/dtos/reponse.dto";
@@ -9,6 +20,7 @@ import { CreateMonsterDto } from "@/resources/monsters/dtos/create-monster.dto";
 import { ParseMongoIdPipe } from "@/common/pipes/parse-mong-id.pipe";
 import { Types } from "mongoose";
 import { langParam } from "@/resources/monsters/dtos/find-one.dto";
+import { ProblemDetailsDto } from "@/common/dtos/errors.dto";
 
 @ApiExtraModels(Monster, MonsterContent, IResponse, IPaginatedResponse)
 @Controller("monsters")
@@ -81,9 +93,13 @@ export class MonstersController {
       ],
     },
   })
-  @ApiResponse({ status: 404, description: "Monster #ID not found" })
-  @ApiResponse({ status: 400, description: "Error while fetching monster #ID: Id is not a valid mongoose id" })
-  @ApiResponse({ status: 410, description: "Monster #ID has been deleted" })
+  @ApiResponse({ status: 404, description: "Monster #ID not found", type: ProblemDetailsDto })
+  @ApiResponse({
+    status: 400,
+    description: "Error while fetching monster #ID: Id is not a valid mongoose id",
+    type: ProblemDetailsDto,
+  })
+  @ApiResponse({ status: 410, description: "Monster #ID has been deleted", type: ProblemDetailsDto })
   async findOne(
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Query() query: langParam,
@@ -110,20 +126,7 @@ export class MonstersController {
   @ApiResponse({
     status: 400,
     description: "Validation DTO failed",
-    schema: {
-      allOf: [
-        {
-          example: {
-            message: [
-              "monsterContent.description must be a string",
-              "monsterContent.level must be a number conforming to the specified constraints",
-            ],
-            statusCode: 400,
-            error: "Bad Request",
-          },
-        },
-      ],
-    },
+    type: ProblemDetailsDto,
   })
   async create(@Body() CreateMonsterDto: CreateMonsterDto): Promise<IResponse<Monster>> {
     return this.monstersService.create(CreateMonsterDto);
@@ -151,13 +154,24 @@ export class MonstersController {
       ],
     },
   })
-  @ApiResponse({ status: 404, description: "Monster #ID not found" })
-  @ApiResponse({ status: 400, description: "Error while fetching monster #ID: Id is not a valid mongoose id" })
-  @ApiResponse({ status: 410, description: "Monster #ID has been deleted" })
+  @ApiResponse({ status: 404, description: "Monster #ID not found", type: ProblemDetailsDto })
+  @ApiResponse({
+    status: 400,
+    description: "Error while fetching monster #ID: Id is not a valid mongoose id",
+    type: ProblemDetailsDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Cannot delete monster #ID: it has at least one SRD translation",
+    type: ProblemDetailsDto,
+  })
+  @ApiResponse({ status: 410, description: "Monster #ID has been deleted", type: ProblemDetailsDto })
   async delete(@Param("id", ParseMongoIdPipe) id: Types.ObjectId): Promise<IResponse<Monster>> {
     const monster: IResponse<Monster> = await this.validateResource(id, "en");
     // Vérifier si au moins une traduction a srd: true
-    const hasSrdTranslation = Array.from(monster.data.translations.values()).some((translation) => translation.srd === true);
+    const hasSrdTranslation = Array.from(monster.data.translations.values()).some(
+      (translation) => translation.srd === true,
+    );
 
     if (hasSrdTranslation) {
       const message = `Cannot delete monster #${id}: it has at least one SRD translation`;

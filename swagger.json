@@ -192,13 +192,34 @@
             }
           },
           "400": {
-            "description": "Error while fetching spell #ID: Id is not a valid mongoose id"
+            "description": "Error while fetching spell #ID: Id is not a valid mongoose id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Spell #ID not found"
+            "description": "Spell #ID not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           },
           "410": {
-            "description": "Spell #ID has been deleted"
+            "description": "Spell #ID has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "summary": "Get a spell by ID",
@@ -263,10 +284,24 @@
             }
           },
           "404": {
-            "description": "Spell #ID not found"
+            "description": "Spell #ID not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           },
           "410": {
-            "description": "Spell #ID has been deleted"
+            "description": "Spell #ID has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "summary": "Update a spell by ID",
@@ -311,13 +346,34 @@
             }
           },
           "400": {
-            "description": "Error while fetching spell #ID: Id is not a valid mongoose id"
+            "description": "Error while fetching spell #ID: Id is not a valid mongoose id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Spell #ID not found"
+            "description": "Spell #ID not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           },
           "410": {
-            "description": "Spell #ID has been deleted"
+            "description": "Spell #ID has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "summary": "Delete a spell by ID",
@@ -457,18 +513,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "example": {
-                        "message": [
-                          "monsterContent.description must be a string",
-                          "monsterContent.level must be a number conforming to the specified constraints"
-                        ],
-                        "statusCode": 400,
-                        "error": "Bad Request"
-                      }
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
                 }
               }
             }
@@ -528,13 +573,34 @@
             }
           },
           "400": {
-            "description": "Error while fetching monster #ID: Id is not a valid mongoose id"
+            "description": "Error while fetching monster #ID: Id is not a valid mongoose id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Monster #ID not found"
+            "description": "Monster #ID not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           },
           "410": {
-            "description": "Monster #ID has been deleted"
+            "description": "Monster #ID has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "summary": "Get a monster by ID",
@@ -579,13 +645,44 @@
             }
           },
           "400": {
-            "description": "Error while fetching monster #ID: Id is not a valid mongoose id"
+            "description": "Error while fetching monster #ID: Id is not a valid mongoose id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cannot delete monster #ID: it has at least one SRD translation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Monster #ID not found"
+            "description": "Monster #ID not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           },
           "410": {
-            "description": "Monster #ID has been deleted"
+            "description": "Monster #ID has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "summary": "Delete a monster by ID",
@@ -631,12 +728,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-18T10:53:15.500Z"
+            "example": "2025-11-18T14:02:32.655Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-18T10:53:15.500Z"
+            "example": "2025-11-18T14:02:32.655Z"
           },
           "name": {
             "type": "string",
@@ -801,23 +898,6 @@
           "pagination"
         ]
       },
-      "UpdateSpellDto": {
-        "type": "object",
-        "properties": {
-          "tag": {
-            "type": "number",
-            "example": 1,
-            "description": "0: Homebrew, 1: Certified by Chariot",
-            "enum": [
-              0,
-              1
-            ]
-          }
-        },
-        "required": [
-          "tag"
-        ]
-      },
       "InvalidParamDto": {
         "type": "object",
         "properties": {
@@ -871,6 +951,23 @@
           "status",
           "instance",
           "detail"
+        ]
+      },
+      "UpdateSpellDto": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "number",
+            "example": 1,
+            "description": "0: Homebrew, 1: Certified by Chariot",
+            "enum": [
+              0,
+              1
+            ]
+          }
+        },
+        "required": [
+          "tag"
         ]
       },
       "CreateSpellContentDto": {
@@ -1446,12 +1543,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-18T10:53:16.097Z"
+            "example": "2025-11-18T14:02:33.213Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-18T10:53:16.097Z"
+            "example": "2025-11-18T14:02:33.213Z"
           },
           "name": {
             "type": "string",
