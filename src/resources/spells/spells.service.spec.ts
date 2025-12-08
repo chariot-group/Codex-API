@@ -1,25 +1,25 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { SpellsService } from './spells.service';
-import { getModelToken } from '@nestjs/mongoose';
-import { Spell } from './schemas/spell.schema';
-import { InternalServerErrorException, NotFoundException, GoneException } from '@nestjs/common';
-import { Types } from 'mongoose';
+import { Test, TestingModule } from "@nestjs/testing";
+import { SpellsService } from "./spells.service";
+import { getModelToken } from "@nestjs/mongoose";
+import { Spell } from "./schemas/spell.schema";
+import { InternalServerErrorException, NotFoundException, GoneException } from "@nestjs/common";
+import { Types } from "mongoose";
 
-describe('SpellsService - create', () => {
+describe("SpellsService - create", () => {
   let service: SpellsService;
   let spellModel: any;
 
   const mockCreateDto = {
     tag: 1,
-    spellContent: { name: 'Fireball' },
-    languages: ['en'],
+    spellContent: { name: "Fireball" },
+    languages: ["en"],
   };
 
   const mockCreatedSpell = {
     _id: new Types.ObjectId(),
     tag: 1,
-    languages: ['en'],
-    translations: new Map([['en', { name: 'Fireball' }]]),
+    languages: ["en"],
+    translations: new Map([["en", { name: "Fireball" }]]),
   };
 
   beforeEach(async () => {
@@ -28,16 +28,13 @@ describe('SpellsService - create', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SpellsService,
-        { provide: getModelToken(Spell.name), useValue: spellModel },
-      ],
+      providers: [SpellsService, { provide: getModelToken(Spell.name), useValue: spellModel }],
     }).compile();
 
     service = module.get<SpellsService>(SpellsService);
   });
 
-  it('should create a spell successfully', async () => {
+  it("should create a spell successfully", async () => {
     const fakeInstance = { save: jest.fn().mockResolvedValue(mockCreatedSpell) };
 
     // simulate `new this.spellModel(spell)` returning fake instance
@@ -47,7 +44,7 @@ describe('SpellsService - create', () => {
     ModelFn.prototype = {};
     (service as any).spellModel = ModelFn;
 
-    const logSpy = jest.spyOn(service['logger'], 'log').mockImplementation(() => {});
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
 
     const result = await service.create(mockCreateDto as any);
 
@@ -57,13 +54,15 @@ describe('SpellsService - create', () => {
     logSpy.mockRestore();
   });
 
-  it('should handle errors', async () => {
-    const fakeInstance = { save: jest.fn().mockRejectedValue(new Error('DB fail')) };
-    const ModelFn: any = function () { return fakeInstance; };
+  it("should handle errors", async () => {
+    const fakeInstance = { save: jest.fn().mockRejectedValue(new Error("DB fail")) };
+    const ModelFn: any = function () {
+      return fakeInstance;
+    };
     ModelFn.prototype = {};
     (service as any).spellModel = ModelFn;
 
-    const errSpy = jest.spyOn(service['logger'], 'error').mockImplementation(() => {});
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
 
     await expect(service.create({} as any)).rejects.toThrow(InternalServerErrorException);
 
@@ -73,15 +72,18 @@ describe('SpellsService - create', () => {
   });
 });
 
-describe('SpellsService - findAll', () => {
+describe("SpellsService - findAll", () => {
   let service: SpellsService;
   let spellModel: any;
 
   const mockSpell = {
     _id: new Types.ObjectId(),
     tag: 2,
-    languages: ['en', 'fr'],
-    translations: new Map([['en', { name: 'Fire' }], ['fr', { name: 'Feu' }]]),
+    languages: ["en", "fr"],
+    translations: new Map([
+      ["en", { name: "Fire" }],
+      ["fr", { name: "Feu" }],
+    ]),
     deletedAt: null,
   };
 
@@ -98,16 +100,13 @@ describe('SpellsService - findAll', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SpellsService,
-        { provide: getModelToken(Spell.name), useValue: spellModel },
-      ],
+      providers: [SpellsService, { provide: getModelToken(Spell.name), useValue: spellModel }],
     }).compile();
 
     service = module.get<SpellsService>(SpellsService);
   });
 
-  it('should return spells with pagination', async () => {
+  it("should return spells with pagination", async () => {
     spellModel.countDocuments.mockResolvedValue(1);
     spellModel.exec.mockResolvedValue([mockSpell]);
 
@@ -117,59 +116,59 @@ describe('SpellsService - findAll', () => {
     expect(spellModel.skip).toHaveBeenCalledWith(0);
     expect(spellModel.limit).toHaveBeenCalledWith(10);
 
-    expect(result).toHaveProperty('pagination');
+    expect(result).toHaveProperty("pagination");
     expect(result.data.length).toBe(1);
   });
 
-  it('should search by name and lang', async () => {
+  it("should search by name and lang", async () => {
     spellModel.countDocuments.mockResolvedValue(1);
     spellModel.exec.mockResolvedValue([mockSpell]);
 
-    const result = await service.findAll({ name: 'Fire', lang: 'en' });
+    const result = await service.findAll({ name: "Fire", lang: "en" });
 
     expect(spellModel.countDocuments).toHaveBeenCalled();
     expect(result.pagination.totalItems).toBe(1);
   });
 
-  it('should search by name in all languages', async () => {
-    spellModel.distinct.mockResolvedValue(['en', 'fr']);
+  it("should search by name in all languages", async () => {
+    spellModel.distinct.mockResolvedValue(["en", "fr"]);
     spellModel.countDocuments.mockResolvedValue(1);
     spellModel.exec.mockResolvedValue([mockSpell]);
 
-    const res = await service.findAll({ name: 'Fire' });
+    const res = await service.findAll({ name: "Fire" });
 
-    expect(spellModel.distinct).toHaveBeenCalledWith('languages');
+    expect(spellModel.distinct).toHaveBeenCalledWith("languages");
     expect(res.data).toBeDefined();
   });
 
-  it('should search by languages', async () => {
-    spellModel.distinct.mockResolvedValue(['en', 'fr']);
+  it("should search by languages", async () => {
+    spellModel.distinct.mockResolvedValue(["en", "fr"]);
     spellModel.countDocuments.mockResolvedValue(1);
     spellModel.exec.mockResolvedValue([mockSpell]);
 
-    const res = await service.findAll({ lang: 'fr' });
-
-    expect(res.data).toBeDefined();
-  });
-
-  it('should search with sort', async () => {
-    spellModel.distinct.mockResolvedValue(['en', 'fr']);
-    spellModel.countDocuments.mockResolvedValue(1);
-    spellModel.exec.mockResolvedValue([mockSpell]);
-
-    const res = await service.findAll({ lang: 'fr', sort: '-tag' });
+    const res = await service.findAll({ lang: "fr" });
 
     expect(res.data).toBeDefined();
   });
 
-  it('should throw InternalServerErrorException on error', async () => {
-    spellModel.countDocuments.mockRejectedValue(new Error('DB_ERR'));
+  it("should search with sort", async () => {
+    spellModel.distinct.mockResolvedValue(["en", "fr"]);
+    spellModel.countDocuments.mockResolvedValue(1);
+    spellModel.exec.mockResolvedValue([mockSpell]);
+
+    const res = await service.findAll({ lang: "fr", sort: "-tag" });
+
+    expect(res.data).toBeDefined();
+  });
+
+  it("should throw InternalServerErrorException on error", async () => {
+    spellModel.countDocuments.mockRejectedValue(new Error("DB_ERR"));
 
     await expect(service.findAll({})).rejects.toThrow(InternalServerErrorException);
   });
 });
 
-describe('SpellsService - findOne', () => {
+describe("SpellsService - findOne", () => {
   let service: SpellsService;
   let spellModel: any;
 
@@ -178,8 +177,11 @@ describe('SpellsService - findOne', () => {
   const mockSpell = {
     _id: id,
     tag: 2,
-    languages: ['en', 'fr'],
-    translations: new Map([['en', { name: 'Fire' }], ['fr', { name: 'Feu' }]]),
+    languages: ["en", "fr"],
+    translations: new Map([
+      ["en", { name: "Fire" }],
+      ["fr", { name: "Feu" }],
+    ]),
     deletedAt: null,
   };
 
@@ -191,52 +193,49 @@ describe('SpellsService - findOne', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SpellsService,
-        { provide: getModelToken(Spell.name), useValue: spellModel },
-      ],
+      providers: [SpellsService, { provide: getModelToken(Spell.name), useValue: spellModel }],
     }).compile();
 
     service = module.get<SpellsService>(SpellsService);
   });
 
-  it('should return a spell with filtered translation', async () => {
+  it("should return a spell with filtered translation", async () => {
     spellModel.exec.mockResolvedValue(mockSpell);
 
-    const result = await service.findOne(id, 'fr');
+    const result = await service.findOne(id, "fr");
 
     expect(spellModel.findById).toHaveBeenCalledWith(id);
     expect(result.data).toBeDefined();
   });
 
-  it('should fallback to first language when lang invalid', async () => {
+  it("should fallback to first language when lang invalid", async () => {
     spellModel.exec.mockResolvedValue(mockSpell);
 
-    const result = await service.findOne(id, 'jp');
+    const result = await service.findOne(id, "jp");
 
     expect(result.data).toBeDefined();
   });
 
-  it('should throw NotFoundException if spell not found', async () => {
+  it("should throw NotFoundException if spell not found", async () => {
     spellModel.exec.mockResolvedValue(null);
 
-    await expect(service.findOne(id, 'en')).rejects.toThrow(NotFoundException);
+    await expect(service.findOne(id, "en")).rejects.toThrow(NotFoundException);
   });
 
-  it('should throw GoneException if deleted', async () => {
+  it("should throw GoneException if deleted", async () => {
     spellModel.exec.mockResolvedValue({ ...mockSpell, deletedAt: new Date() });
 
-    await expect(service.findOne(id, 'en')).rejects.toThrow(GoneException);
+    await expect(service.findOne(id, "en")).rejects.toThrow(GoneException);
   });
 
-  it('should throw InternalServerErrorException on DB error', async () => {
-    spellModel.exec.mockRejectedValue(new Error('DB fail'));
+  it("should throw InternalServerErrorException on DB error", async () => {
+    spellModel.exec.mockRejectedValue(new Error("DB fail"));
 
-    await expect(service.findOne(id, 'en')).rejects.toThrow(InternalServerErrorException);
+    await expect(service.findOne(id, "en")).rejects.toThrow(InternalServerErrorException);
   });
 });
 
-describe('SpellsService - update', () => {
+describe("SpellsService - update", () => {
   let service: SpellsService;
   let spellModel: any;
 
@@ -255,16 +254,13 @@ describe('SpellsService - update', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SpellsService,
-        { provide: getModelToken(Spell.name), useValue: spellModel },
-      ],
+      providers: [SpellsService, { provide: getModelToken(Spell.name), useValue: spellModel }],
     }).compile();
 
     service = module.get<SpellsService>(SpellsService);
   });
 
-  it('should update a spell', async () => {
+  it("should update a spell", async () => {
     spellModel.exec.mockResolvedValue({});
 
     const result = await service.update(id, { ...mockOldSpell } as any, { tag: 10 } as any);
@@ -273,8 +269,8 @@ describe('SpellsService - update', () => {
     expect(result.data.tag).toBe(10);
   });
 
-  it('should throw InternalServerErrorException on error', async () => {
-    spellModel.exec.mockRejectedValue(new Error('DB fail'));
+  it("should throw InternalServerErrorException on error", async () => {
+    spellModel.exec.mockRejectedValue(new Error("DB fail"));
 
     await expect(service.update(id, mockOldSpell as any, { tag: 5 } as any)).rejects.toThrow(
       InternalServerErrorException,
@@ -282,7 +278,7 @@ describe('SpellsService - update', () => {
   });
 });
 
-describe('SpellsService - delete', () => {
+describe("SpellsService - delete", () => {
   let service: SpellsService;
   let spellModel: any;
 
@@ -301,29 +297,258 @@ describe('SpellsService - delete', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SpellsService,
-        { provide: getModelToken(Spell.name), useValue: spellModel },
-      ],
+      providers: [SpellsService, { provide: getModelToken(Spell.name), useValue: spellModel }],
     }).compile();
 
     service = module.get<SpellsService>(SpellsService);
   });
 
-  it('should soft delete a spell', async () => {
+  it("should soft delete a spell", async () => {
     spellModel.exec.mockResolvedValue({});
 
-    const result = await service.delete(id, { ...mockSpell, languages: ['en'] } as any);
+    const result = await service.delete(id, { ...mockSpell, languages: ["en"] } as any);
 
     expect(spellModel.updateOne).toHaveBeenCalled();
     expect(result.data.deletedAt).toBeDefined();
   });
 
-  it('should throw InternalServerErrorException on error', async () => {
-    spellModel.exec.mockRejectedValue(new Error('FAIL'));
+  it("should throw InternalServerErrorException on error", async () => {
+    spellModel.exec.mockRejectedValue(new Error("FAIL"));
 
-    await expect(service.delete(id, mockSpell as any)).rejects.toThrow(
-      InternalServerErrorException,
-    );
+    await expect(service.delete(id, mockSpell as any)).rejects.toThrow(InternalServerErrorException);
+  });
+});
+
+describe("SpellsService - getTranslations", () => {
+  let service: SpellsService;
+  let spellModel: any;
+
+  const id = new Types.ObjectId();
+
+  const mockSpell = {
+    _id: id,
+    tag: 1,
+    languages: ["en", "fr"],
+    translations: new Map([
+      [
+        "en",
+        {
+          srd: true,
+          name: "Fireball",
+          level: 3,
+          school: "Evocation",
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+      [
+        "fr",
+        {
+          srd: false,
+          name: "Boule de feu",
+          level: 3,
+          school: "Évocation",
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+    ]),
+    deletedAt: null,
+  };
+
+  beforeEach(async () => {
+    spellModel = {
+      findById: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [SpellsService, { provide: getModelToken(Spell.name), useValue: spellModel }],
+    }).compile();
+
+    service = module.get<SpellsService>(SpellsService);
+  });
+
+  it("should return all translations for a spell", async () => {
+    spellModel.exec.mockResolvedValue(mockSpell);
+
+    const result = await service.getTranslations(id);
+
+    expect(spellModel.findById).toHaveBeenCalledWith(id);
+    expect(result.data.spellId).toBe(id.toString());
+    expect(result.data.translations).toHaveLength(2);
+    expect(result.data.translations[0].lang).toBe("en");
+    expect(result.data.translations[1].lang).toBe("fr");
+  });
+
+  it("should exclude deleted translations", async () => {
+    const spellWithDeletedTranslation = {
+      ...mockSpell,
+      translations: new Map([
+        [
+          "en",
+          {
+            srd: true,
+            name: "Fireball",
+            level: 3,
+            school: "Evocation",
+            deletedAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        [
+          "fr",
+          {
+            srd: false,
+            name: "Boule de feu",
+            level: 3,
+            school: "Évocation",
+            deletedAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      ]),
+    };
+    spellModel.exec.mockResolvedValue(spellWithDeletedTranslation);
+
+    const result = await service.getTranslations(id);
+
+    expect(result.data.translations).toHaveLength(1);
+    expect(result.data.translations[0].lang).toBe("en");
+  });
+
+  it("should throw NotFoundException if spell not found", async () => {
+    spellModel.exec.mockResolvedValue(null);
+
+    await expect(service.getTranslations(id)).rejects.toThrow(NotFoundException);
+  });
+
+  it("should throw GoneException if spell is deleted", async () => {
+    spellModel.exec.mockResolvedValue({ ...mockSpell, deletedAt: new Date() });
+
+    await expect(service.getTranslations(id)).rejects.toThrow(GoneException);
+  });
+
+  it("should throw InternalServerErrorException on DB error", async () => {
+    spellModel.exec.mockRejectedValue(new Error("DB fail"));
+
+    await expect(service.getTranslations(id)).rejects.toThrow(InternalServerErrorException);
+  });
+});
+
+describe("SpellsService - getTranslation", () => {
+  let service: SpellsService;
+  let spellModel: any;
+
+  const id = new Types.ObjectId();
+
+  const mockSpell = {
+    _id: id,
+    tag: 1,
+    languages: ["en", "fr"],
+    translations: new Map([
+      [
+        "en",
+        {
+          srd: true,
+          name: "Fireball",
+          level: 3,
+          school: "Evocation",
+          description: "A fiery spell",
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+      [
+        "fr",
+        {
+          srd: false,
+          name: "Boule de feu",
+          level: 3,
+          school: "Évocation",
+          description: "Un sort de feu",
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+    ]),
+    deletedAt: null,
+  };
+
+  beforeEach(async () => {
+    spellModel = {
+      findById: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [SpellsService, { provide: getModelToken(Spell.name), useValue: spellModel }],
+    }).compile();
+
+    service = module.get<SpellsService>(SpellsService);
+  });
+
+  it("should return a specific translation", async () => {
+    spellModel.exec.mockResolvedValue(mockSpell);
+
+    const result = await service.getTranslation(id, "fr");
+
+    expect(spellModel.findById).toHaveBeenCalledWith(id);
+    expect(result.data.name).toBe("Boule de feu");
+    expect(result.data.level).toBe(3);
+  });
+
+  it("should throw NotFoundException if spell not found", async () => {
+    spellModel.exec.mockResolvedValue(null);
+
+    await expect(service.getTranslation(id, "en")).rejects.toThrow(NotFoundException);
+  });
+
+  it("should throw GoneException if spell is deleted", async () => {
+    spellModel.exec.mockResolvedValue({ ...mockSpell, deletedAt: new Date() });
+
+    await expect(service.getTranslation(id, "en")).rejects.toThrow(GoneException);
+  });
+
+  it("should throw NotFoundException if translation not found", async () => {
+    spellModel.exec.mockResolvedValue(mockSpell);
+
+    await expect(service.getTranslation(id, "de")).rejects.toThrow(NotFoundException);
+  });
+
+  it("should throw GoneException if translation is deleted", async () => {
+    const spellWithDeletedTranslation = {
+      ...mockSpell,
+      translations: new Map([
+        [
+          "en",
+          {
+            srd: true,
+            name: "Fireball",
+            level: 3,
+            school: "Evocation",
+            description: "A fiery spell",
+            deletedAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      ]),
+    };
+    spellModel.exec.mockResolvedValue(spellWithDeletedTranslation);
+
+    await expect(service.getTranslation(id, "en")).rejects.toThrow(GoneException);
+  });
+
+  it("should throw InternalServerErrorException on DB error", async () => {
+    spellModel.exec.mockRejectedValue(new Error("DB fail"));
+
+    await expect(service.getTranslation(id, "en")).rejects.toThrow(InternalServerErrorException);
   });
 });
