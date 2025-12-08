@@ -5,6 +5,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  GoneException,
   Logger,
   Param,
   Patch,
@@ -23,8 +24,9 @@ import { Types } from "mongoose";
 import { langParam } from "@/resources/monsters/dtos/find-one.dto";
 import { ProblemDetailsDto } from "@/common/dtos/errors.dto";
 import { UpdateMonsterDto } from "@/resources/monsters/dtos/update-monster.dto";
+import { UpdateMonsterTranslationDto } from "@/resources/monsters/dtos/update-monster-translation.dto";
 
-@ApiExtraModels(Monster, MonsterContent, IResponse, IPaginatedResponse)
+@ApiExtraModels(Monster, MonsterContent, IResponse, IPaginatedResponse, UpdateMonsterTranslationDto)
 @Controller("monsters")
 export class MonstersController {
   constructor(private readonly monstersService: MonstersService) {}
@@ -235,5 +237,73 @@ export class MonstersController {
     }
 
     return this.monstersService.update(id, oldMonster.data, updateData);
+  }
+
+  @Patch(":id/translations/:lang")
+  @ApiOperation({ summary: "Update a specific translation for a monster" })
+  @ApiParam({
+    name: "id",
+    type: String,
+    required: true,
+    description: "The ID of the monster",
+    example: "507f1f77bcf86cd799439011",
+  })
+  @ApiParam({
+    name: "lang",
+    type: String,
+    required: true,
+    description: "The ISO 2-letter language code in lowercase",
+    example: "fr",
+  })
+  @ApiOkResponse({
+    description: "Translation updated successfully",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(IResponse) },
+        {
+          properties: {
+            data: { $ref: getSchemaPath(Monster) },
+          },
+        },
+      ],
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Validation error or invalid language code",
+    type: ProblemDetailsDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Cannot modify SRD translation or official monster translation without admin rights",
+    type: ProblemDetailsDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Monster or translation not found",
+    type: ProblemDetailsDto,
+  })
+  @ApiResponse({
+    status: 410,
+    description: "Monster or translation has been deleted",
+    type: ProblemDetailsDto,
+  })
+  async updateTranslation(
+    @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
+    @Param("lang") lang: string,
+    @Body() updateData: UpdateMonsterTranslationDto,
+  ): Promise<IResponse<Monster>> {
+    // Validate language code format
+    if (!/^[a-z]{2}$/.test(lang)) {
+      const message = `Invalid language code '${lang}': must be a 2-letter ISO code in lowercase`;
+      this.logger.error(message);
+      throw new BadRequestException(message);
+    }
+
+    // TODO: Implement authentication/authorization to determine if user is admin
+    // For now, we'll determine based on the request context
+    const isAdmin = false; // This should come from auth guard/decorator
+
+    return this.monstersService.updateTranslation(id, lang, updateData, isAdmin);
   }
 }

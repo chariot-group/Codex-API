@@ -111,7 +111,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateStatsDto source
    * @returns Stats entity
    */
-  private dtoStatsToEntity(dto: CreateStatsDto): Stats {
+  public dtoStatsToEntity(dto: CreateStatsDto): Stats {
     const stats: Stats = new Stats();
 
     stats.size = dto.size ?? 0;
@@ -252,7 +252,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateAffinitiesDto source
    * @returns Affinities entity
    */
-  private dtoAffinitiesToEntity(dto: CreateAffinitiesDto): Affinities {
+  public dtoAffinitiesToEntity(dto: CreateAffinitiesDto): Affinities {
     const affinities: Affinities = new Affinities();
 
     affinities.resistances = dto.resistances ?? [];
@@ -268,7 +268,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateAbilityDto source
    * @returns Ability entity
    */
-  private dtoAbilityToEntity(dto: CreateAbilityDto): Ability {
+  public dtoAbilityToEntity(dto: CreateAbilityDto): Ability {
     const ability: Ability = new Ability();
 
     ability.name = dto.name;
@@ -282,7 +282,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateSpellcastingDto source
    * @returns Spellcasting entity
    */
-  private dtoSpellcastingToEntity(dto: CreateSpellcastingDto): Spellcasting {
+  public dtoSpellcastingToEntity(dto: CreateSpellcastingDto): Spellcasting {
     const spellcasting: Spellcasting = new Spellcasting();
 
     spellcasting.ability = dto.ability;
@@ -311,7 +311,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateActionsDto source
    * @returns Actions entity
    */
-  private dtoActionsToEntity(dto: CreateActionsDto): Actions {
+  public dtoActionsToEntity(dto: CreateActionsDto): Actions {
     const actions: Actions = new Actions();
 
     actions.standard = dto.standard?.map((action) => this.dtoActionToEntity(action)) ?? [];
@@ -407,7 +407,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateChallengeDto source
    * @returns Challenge entity
    */
-  private dtoChallengeToEntity(dto: CreateChallengeDto): Challenge {
+  public dtoChallengeToEntity(dto: CreateChallengeDto): Challenge {
     const challenge: Challenge = new Challenge();
 
     challenge.challengeRating = dto.challengeRating;
@@ -421,7 +421,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateProfileDto source
    * @returns Profile entity
    */
-  private dtoProfileToEntity(dto: CreateProfileDto): Profile {
+  public dtoProfileToEntity(dto: CreateProfileDto): Profile {
     const profile: Profile = new Profile();
 
     profile.type = dto.type;

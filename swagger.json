@@ -1133,6 +1133,110 @@
           "Monsters"
         ]
       }
+    },
+    "/monsters/{id}/translations/{lang}": {
+      "patch": {
+        "operationId": "MonstersController_updateTranslation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the monster",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "The ISO 2-letter language code in lowercase",
+            "schema": {
+              "example": "fr",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMonsterTranslationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Translation updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Monster"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid language code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cannot modify SRD translation or official monster translation without admin rights",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Monster or translation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Monster or translation has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a specific translation for a monster",
+        "tags": [
+          "Monsters"
+        ]
+      }
     }
   },
   "info": {
@@ -1171,12 +1275,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T15:53:12.031Z"
+            "example": "2025-12-08T17:20:30.628Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T15:53:12.031Z"
+            "example": "2025-12-08T17:20:30.628Z"
           },
           "name": {
             "type": "string",
@@ -1390,13 +1494,13 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T15:53:12.141Z",
+            "example": "2025-12-08T17:20:30.739Z",
             "description": "Creation date of this translation"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T15:53:12.141Z",
+            "example": "2025-12-08T17:20:30.739Z",
             "description": "Last update date of this translation"
           }
         },
@@ -2157,12 +2261,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T15:53:12.584Z"
+            "example": "2025-12-08T17:20:31.195Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T15:53:12.584Z"
+            "example": "2025-12-08T17:20:31.195Z"
           },
           "name": {
             "type": "string",
@@ -2925,6 +3029,60 @@
           "alignment": {
             "type": "string",
             "example": "neutral evil"
+          }
+        }
+      },
+      "UpdateMonsterTranslationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Gobelin",
+            "description": "Name of the monster"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/CreateStatsDto"
+          },
+          "affinities": {
+            "$ref": "#/components/schemas/CreateAffinitiesDto"
+          },
+          "abilities": {
+            "example": [
+              {
+                "name": "Fey Ancestry",
+                "description": "The creature has advantage on saving throws against being charmed."
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateAbilityDto"
+            }
+          },
+          "spellcasting": {
+            "example": [
+              {
+                "ability": "Intelligence",
+                "saveDC": 14,
+                "attackBonus": 6,
+                "spells": [
+                  "507f1f77bcf86cd799439011",
+                  "507f1f77bcf86cd799439012"
+                ]
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateSpellcastingDto"
+            }
+          },
+          "actions": {
+            "$ref": "#/components/schemas/CreateActionsDto"
+          },
+          "challenge": {
+            "$ref": "#/components/schemas/CreateChallengeDto"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/CreateProfileDto"
           }
         }
       },

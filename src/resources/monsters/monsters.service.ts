@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   GoneException,
   HttpException,
   Injectable,
@@ -19,6 +20,7 @@ import { IResponse } from "@/common/dtos/reponse.dto";
 import { SpellFormattedDto } from "@/common/dtos/spell-formatted.dto";
 import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
 import { UpdateMonsterDto } from "@/resources/monsters/dtos/update-monster.dto";
+import { UpdateMonsterTranslationDto } from "@/resources/monsters/dtos/update-monster-translation.dto";
 
 @Injectable()
 export class MonstersService {
@@ -145,7 +147,7 @@ export class MonstersService {
               }
 
               // Replace spell IDs with populated spell data
-              (spellcasting as any).spells = populatedSpells;
+              spellcasting.spells = populatedSpells;
             }
           }
         }
@@ -261,7 +263,7 @@ export class MonstersService {
         const decodedName: string = decodeURIComponent(name).toLowerCase();
 
         monsters = monsters.map((monster) => {
-          let filteredTranslations: Map<string, MonsterContent> = new Map();
+          const filteredTranslations: Map<string, MonsterContent> = new Map();
 
           // On parcours toutes les langues
           for (const language of monster.languages) {
@@ -281,7 +283,7 @@ export class MonstersService {
           this.logger.log(`Filtered translations: ${JSON.stringify(filteredTranslations)}`);
 
           return monster;
-        }) as Monster[];
+        });
       }
 
       this.logger.log(`Monsters found in ${end - start}ms`);
@@ -305,7 +307,7 @@ export class MonstersService {
 
   async findOne(id: Types.ObjectId, lang: string): Promise<IResponse<Monster>> {
     try {
-      let projection: any = {
+      const projection: any = {
         tag: 1,
         languages: 1,
         translations: 1,
@@ -431,6 +433,171 @@ export class MonstersService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       const message: string = `Error while updating monster #${id}`;
+      this.logger.error(`${message}: ${error}`);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  /**
+   * Update an existing translation for a monster
+   * @param id Monster ID
+   * @param lang Language code (ISO 2 letters)
+   * @param updateData Update data for the translation
+   * @param isAdmin Whether the user is an administrator
+   * @returns Updated monster with the modified translation
+   */
+  async updateTranslation(
+    id: Types.ObjectId,
+    lang: string,
+    updateData: UpdateMonsterTranslationDto,
+    isAdmin: boolean = false,
+  ): Promise<IResponse<Monster>> {
+    try {
+      // Validate language format
+      if (!/^[a-z]{2}$/.test(lang)) {
+        const message = `Language code '${lang}' must be a 2-letter ISO code in lowercase (e.g., fr, en, es)`;
+        this.logger.error(message);
+        throw new BadRequestException(message);
+      }
+
+      // Fetch the monster
+      const monster: Monster = await this.monsterModel.findById(id).exec();
+
+      if (!monster) {
+        const message = `Monster #${id} not found`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      // Check if monster is deleted
+      if (monster.deletedAt) {
+        const message = `Monster #${id} has been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
+      // Check if translation exists
+      const translation: MonsterContent = monster.translations.get(lang);
+
+      if (!translation) {
+        const message = `Translation '${lang}' not found for monster #${id}`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      // Check if translation is deleted
+      if (translation.deletedAt) {
+        const message = `Translation '${lang}' for monster #${id} has been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
+      // Check permissions for SRD translations - only admins can modify them
+      if (translation.srd === true && !isAdmin) {
+        const message = `Cannot modify SRD translation '${lang}' for monster #${id}: only administrators can modify SRD translations`;
+        this.logger.error(message);
+        throw new ForbiddenException(message);
+      }
+
+      // For homebrew monsters (tag=0), only creator or admin can modify
+      // For official monsters (tag=1), only admins can modify non-SRD translations
+      if (monster.tag === 1 && !isAdmin) {
+        const message = `Cannot modify translation '${lang}' for official monster #${id}: only administrators can modify official monster translations`;
+        this.logger.error(message);
+        throw new ForbiddenException(message);
+      }
+
+      // Validate spells if spellcasting is being updated
+      if (updateData.spellcasting && updateData.spellcasting.length > 0) {
+        const spellIds: Types.ObjectId[] = [];
+        for (const spellcasting of updateData.spellcasting) {
+          if (spellcasting.spells && spellcasting.spells.length > 0) {
+            for (const spellId of spellcasting.spells) {
+              if (Types.ObjectId.isValid(spellId)) {
+                spellIds.push(new Types.ObjectId(spellId));
+              }
+            }
+          }
+        }
+        if (spellIds.length > 0) {
+          this.logger.log(`Validating ${spellIds.length} spell(s) for translation update`);
+          await this.validateSpells(spellIds);
+        }
+      }
+
+      // Build update object for MongoDB
+      const updateFields: Record<string, any> = {};
+      const now = new Date();
+
+      // Always update the updatedAt timestamp
+      updateFields[`translations.${lang}.updatedAt`] = now;
+
+      // Map update data fields to MongoDB update paths
+      if (updateData.name !== undefined) {
+        updateFields[`translations.${lang}.name`] = updateData.name;
+      }
+      if (updateData.stats !== undefined) {
+        updateFields[`translations.${lang}.stats`] = this.mapper.dtoStatsToEntity(updateData.stats);
+      }
+      if (updateData.affinities !== undefined) {
+        updateFields[`translations.${lang}.affinities`] = this.mapper.dtoAffinitiesToEntity(updateData.affinities);
+      }
+      if (updateData.abilities !== undefined) {
+        updateFields[`translations.${lang}.abilities`] = updateData.abilities.map((ability) =>
+          this.mapper.dtoAbilityToEntity(ability),
+        );
+      }
+      if (updateData.spellcasting !== undefined) {
+        updateFields[`translations.${lang}.spellcasting`] = updateData.spellcasting.map((spellcasting) =>
+          this.mapper.dtoSpellcastingToEntity(spellcasting),
+        );
+      }
+      if (updateData.actions !== undefined) {
+        updateFields[`translations.${lang}.actions`] = this.mapper.dtoActionsToEntity(updateData.actions);
+      }
+      if (updateData.challenge !== undefined) {
+        updateFields[`translations.${lang}.challenge`] = this.mapper.dtoChallengeToEntity(updateData.challenge);
+      }
+      if (updateData.profile !== undefined) {
+        updateFields[`translations.${lang}.profile`] = this.mapper.dtoProfileToEntity(updateData.profile);
+      }
+
+      const start: number = Date.now();
+
+      // Perform the update
+      await this.monsterModel
+        .updateOne(
+          { _id: id },
+          {
+            $set: updateFields,
+          },
+        )
+        .exec();
+
+      const end: number = Date.now();
+
+      // Fetch updated monster
+      const updatedMonster: Monster = await this.monsterModel.findById(id).exec();
+
+      // Populate spells with full data
+      const populatedMonster = await this.populateSpells(updatedMonster, lang);
+
+      const message: string = `Translation '${lang}' for monster #${id} updated in ${end - start}ms`;
+      this.logger.log(message);
+
+      // Filter to show only the updated translation
+      const filteredMonster = this.mapper.calculAvailablesLanguages(populatedMonster);
+      const updatedTranslation = filteredMonster.translations.get(lang);
+      filteredMonster.translations = new Map<string, MonsterContent>();
+      filteredMonster.translations.set(lang, updatedTranslation);
+
+      return {
+        message,
+        data: filteredMonster,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while updating translation '${lang}' for monster #${id}`;
       this.logger.error(`${message}: ${error}`);
       throw new InternalServerErrorException(message);
     }
