@@ -1,4 +1,5 @@
-FROM node:25-alpine
+# Build stage
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
@@ -11,8 +12,19 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Remove dev dependencies after build
-RUN npm prune --production
+# Production stage
+FROM node:25-alpine AS production
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --omit=dev
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
 
 CMD [ "node", "dist/main.js" ]
 
