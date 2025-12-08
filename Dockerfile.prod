@@ -10,7 +10,11 @@ RUN npm ci --include=dev
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN npm run build && \
+    echo "Build completed. Checking dist folder:" && \
+    ls -la dist/ && \
+    echo "Checking main.js:" && \
+    ls -la dist/main.js
 
 # Production stage
 FROM node:25-alpine AS production
@@ -25,6 +29,12 @@ RUN npm ci --omit=dev
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
+
+# Verify the files are copied
+RUN echo "Production stage - dist folder:" && \
+    ls -la dist/ && \
+    echo "Checking main.js:" && \
+    ls -la dist/main.js || echo "ERROR: main.js not found!"
 
 CMD [ "node", "dist/main.js" ]
 
