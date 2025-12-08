@@ -382,6 +382,89 @@
         ]
       }
     },
+    "/spells/{id}/translations/{lang}": {
+      "delete": {
+        "operationId": "SpellsController_deleteTranslation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the spell",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "The ISO 2-letter code of the language to delete",
+            "schema": {
+              "example": "fr",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Translation deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteTranslationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid spell ID or language code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cannot delete SRD translation or last active translation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Spell or translation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Spell or translation has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a specific translation for a spell",
+        "tags": [
+          "Spells"
+        ]
+      }
+    },
     "/monsters": {
       "get": {
         "operationId": "MonstersController_findAll",
@@ -820,12 +903,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-18T14:45:25.373Z"
+            "example": "2025-12-08T14:03:36.784Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-18T14:45:25.373Z"
+            "example": "2025-12-08T14:03:36.784Z"
           },
           "name": {
             "type": "string",
@@ -988,6 +1071,34 @@
           "message",
           "data",
           "pagination"
+        ]
+      },
+      "DeleteTranslationResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Translation 'fr' for spell #507f1f77bcf86cd799439011 deleted successfully"
+          },
+          "deletedLanguage": {
+            "type": "string",
+            "example": "fr"
+          },
+          "remainingLanguages": {
+            "example": [
+              "en",
+              "es"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "message",
+          "deletedLanguage",
+          "remainingLanguages"
         ]
       },
       "InvalidParamDto": {
@@ -1635,12 +1746,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-18T14:45:25.955Z"
+            "example": "2025-12-08T14:03:37.370Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-11-18T14:45:25.955Z"
+            "example": "2025-12-08T14:03:37.370Z"
           },
           "name": {
             "type": "string",
