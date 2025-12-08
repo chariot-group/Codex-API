@@ -382,7 +382,163 @@
         ]
       }
     },
+    "/spells/{id}/translations": {
+      "get": {
+        "operationId": "SpellsController_getTranslations",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the spell to get translations for",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spell translations found successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/SpellTranslationsListDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error while fetching spell #ID: Id is not a valid mongoose id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Spell #ID not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Spell #ID has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all available translations for a spell",
+        "tags": [
+          "Spells"
+        ]
+      }
+    },
     "/spells/{id}/translations/{lang}": {
+      "get": {
+        "operationId": "SpellsController_getTranslation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the spell to get the translation for",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "The ISO 2 letters language code (e.g., 'fr', 'es', 'de')",
+            "schema": {
+              "example": "fr",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spell translation found successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/SpellContent"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error while fetching spell #ID: Id is not a valid mongoose id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Spell #ID not found or translation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Spell #ID has been deleted or translation has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a specific translation for a spell by language code",
+        "tags": [
+          "Spells"
+        ]
+      },
       "post": {
         "operationId": "SpellsController_addTranslation",
         "parameters": [
@@ -562,7 +718,7 @@
             }
           },
           "403": {
-            "description": "Cannot modify components when multiple translations exist",
+            "description": "Cannot modify components count (must remain consistent across translations)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1036,12 +1192,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T15:42:38.091Z"
+            "example": "2025-12-08T15:49:47.854Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T15:42:38.091Z"
+            "example": "2025-12-08T15:49:47.855Z"
           },
           "name": {
             "type": "string",
@@ -1204,6 +1360,72 @@
           "message",
           "data",
           "pagination"
+        ]
+      },
+      "SpellTranslationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "lang": {
+            "type": "string",
+            "example": "en",
+            "description": "ISO 2 letters language code"
+          },
+          "srd": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether this translation is from SRD"
+          },
+          "name": {
+            "type": "string",
+            "example": "Fireball",
+            "description": "Name of the spell in this language"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-12-08T15:49:47.967Z",
+            "description": "Creation date of this translation"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-12-08T15:49:47.967Z",
+            "description": "Last update date of this translation"
+          }
+        },
+        "required": [
+          "lang",
+          "srd",
+          "name",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SpellTranslationsListDto": {
+        "type": "object",
+        "properties": {
+          "spellId": {
+            "type": "string",
+            "example": "507f1f77bcf86cd799439011",
+            "description": "Spell ID"
+          },
+          "tag": {
+            "type": "number",
+            "example": 1,
+            "description": "Spell tag"
+          },
+          "translations": {
+            "description": "List of available translations",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpellTranslationSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "spellId",
+          "tag",
+          "translations"
         ]
       },
       "InvalidParamDto": {
@@ -1997,12 +2219,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T15:42:38.692Z"
+            "example": "2025-12-08T15:49:48.422Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T15:42:38.692Z"
+            "example": "2025-12-08T15:49:48.422Z"
           },
           "name": {
             "type": "string",
