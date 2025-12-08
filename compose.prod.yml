@@ -18,6 +18,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
   backend:
     build:
       context: .
@@ -33,6 +35,12 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+    networks:
+      - app-network
 
 volumes:
   mongodb_data:
+
+networks:
+  app-network:
+    driver: bridge
