@@ -919,3 +919,283 @@ describe("MonstersService - populateSpells", () => {
     errSpy.mockRestore();
   });
 });
+
+describe("MonstersService - getTranslations", () => {
+  let service: MonstersService;
+  let monsterModel: any;
+  let spellModel: any;
+
+  const mockMonsterId = new Types.ObjectId();
+
+  beforeEach(async () => {
+    monsterModel = {
+      findById: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    spellModel = {
+      find: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MonstersService,
+        { provide: getModelToken(Monster.name), useValue: monsterModel },
+        { provide: getModelToken(Spell.name), useValue: spellModel },
+      ],
+    }).compile();
+
+    service = module.get<MonstersService>(MonstersService);
+  });
+
+  it("should return list of translations successfully", async () => {
+    const mockMonster = {
+      _id: mockMonsterId,
+      languages: ["en", "fr"],
+      deletedAt: null,
+      translations: new Map([
+        ["en", { srd: true, name: "Goblin", deletedAt: null, createdAt: new Date(), updatedAt: new Date() }],
+        ["fr", { srd: false, name: "Gobelin", deletedAt: null, createdAt: new Date(), updatedAt: new Date() }],
+      ]),
+    };
+
+    monsterModel.exec.mockResolvedValue(mockMonster);
+
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
+
+    const result = await service.getTranslations(mockMonsterId);
+
+    expect(result.data).toHaveLength(2);
+    expect(result.data[0].lang).toBe("en");
+    expect(result.data[0].name).toBe("Goblin");
+    expect(result.data[1].lang).toBe("fr");
+    expect(result.data[1].name).toBe("Gobelin");
+
+    logSpy.mockRestore();
+  });
+
+  it("should throw NotFoundException when monster not found", async () => {
+    monsterModel.exec.mockResolvedValue(null);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.getTranslations(mockMonsterId)).rejects.toThrow(NotFoundException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw GoneException when monster is deleted", async () => {
+    const mockMonster = {
+      _id: mockMonsterId,
+      languages: ["en"],
+      deletedAt: new Date(),
+      translations: new Map([["en", { name: "Goblin" }]]),
+    };
+
+    monsterModel.exec.mockResolvedValue(mockMonster);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.getTranslations(mockMonsterId)).rejects.toThrow(GoneException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should exclude deleted translations", async () => {
+    const mockMonster = {
+      _id: mockMonsterId,
+      languages: ["en", "fr"],
+      deletedAt: null,
+      translations: new Map([
+        ["en", { srd: true, name: "Goblin", deletedAt: null }],
+        ["fr", { srd: false, name: "Gobelin", deletedAt: new Date() }],
+      ]),
+    };
+
+    monsterModel.exec.mockResolvedValue(mockMonster);
+
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
+
+    const result = await service.getTranslations(mockMonsterId);
+
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].lang).toBe("en");
+
+    logSpy.mockRestore();
+  });
+});
+
+describe("MonstersService - getTranslation", () => {
+  let service: MonstersService;
+  let monsterModel: any;
+  let spellModel: any;
+
+  const mockMonsterId = new Types.ObjectId();
+
+  beforeEach(async () => {
+    monsterModel = {
+      findById: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    spellModel = {
+      find: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MonstersService,
+        { provide: getModelToken(Monster.name), useValue: monsterModel },
+        { provide: getModelToken(Spell.name), useValue: spellModel },
+      ],
+    }).compile();
+
+    service = module.get<MonstersService>(MonstersService);
+  });
+
+  it("should return translation successfully", async () => {
+    const mockMonster = {
+      _id: mockMonsterId,
+      languages: ["en", "fr"],
+      deletedAt: null,
+      translations: new Map([
+        ["en", { srd: true, name: "Goblin", deletedAt: null }],
+        ["fr", { srd: false, name: "Gobelin", deletedAt: null }],
+      ]),
+    };
+
+    monsterModel.exec.mockResolvedValue(mockMonster);
+    spellModel.exec.mockResolvedValue([]);
+
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
+
+    const result = await service.getTranslation(mockMonsterId, "fr");
+
+    expect(result.data.name).toBe("Gobelin");
+    expect(result.data.srd).toBe(false);
+
+    logSpy.mockRestore();
+  });
+
+  it("should throw NotFoundException when monster not found", async () => {
+    monsterModel.exec.mockResolvedValue(null);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.getTranslation(mockMonsterId, "en")).rejects.toThrow(NotFoundException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw GoneException when monster is deleted", async () => {
+    const mockMonster = {
+      _id: mockMonsterId,
+      languages: ["en"],
+      deletedAt: new Date(),
+      translations: new Map([["en", { name: "Goblin" }]]),
+    };
+
+    monsterModel.exec.mockResolvedValue(mockMonster);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.getTranslation(mockMonsterId, "en")).rejects.toThrow(GoneException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw NotFoundException when translation not found", async () => {
+    const mockMonster = {
+      _id: mockMonsterId,
+      languages: ["en"],
+      deletedAt: null,
+      translations: new Map([["en", { name: "Goblin", deletedAt: null }]]),
+    };
+
+    monsterModel.exec.mockResolvedValue(mockMonster);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.getTranslation(mockMonsterId, "fr")).rejects.toThrow(NotFoundException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw GoneException when translation is deleted", async () => {
+    const mockMonster = {
+      _id: mockMonsterId,
+      languages: ["en", "fr"],
+      deletedAt: null,
+      translations: new Map([
+        ["en", { name: "Goblin", deletedAt: null }],
+        ["fr", { name: "Gobelin", deletedAt: new Date() }],
+      ]),
+    };
+
+    monsterModel.exec.mockResolvedValue(mockMonster);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.getTranslation(mockMonsterId, "fr")).rejects.toThrow(GoneException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should populate spells in translation", async () => {
+    const spellId = new Types.ObjectId();
+
+    const mockMonster = {
+      _id: mockMonsterId,
+      languages: ["en"],
+      deletedAt: null,
+      translations: new Map([
+        [
+          "en",
+          {
+            name: "Wizard Goblin",
+            deletedAt: null,
+            spellcasting: [
+              {
+                ability: "intelligence",
+                spells: [spellId],
+              },
+            ],
+          },
+        ],
+      ]),
+    };
+
+    const mockSpell = {
+      _id: spellId,
+      languages: ["en"],
+      translations: new Map([
+        [
+          "en",
+          {
+            name: "Fireball",
+            level: 3,
+            description: "A ball of fire",
+            srd: true,
+          },
+        ],
+      ]),
+    };
+
+    monsterModel.exec.mockResolvedValue(mockMonster);
+    spellModel.exec.mockResolvedValue([mockSpell]);
+
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
+
+    const result = await service.getTranslation(mockMonsterId, "en");
+
+    expect(result.data.spellcasting[0].spells[0]).toHaveProperty("name", "Fireball");
+
+    logSpy.mockRestore();
+  });
+});
