@@ -1,4 +1,7 @@
 import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
   GoneException,
   HttpException,
   Injectable,
@@ -13,8 +16,15 @@ import { IResponse, IPaginatedResponse } from "@/common/dtos/reponse.dto";
 import { PaginationSpell } from "@/resources/spells/dtos/find-all.dto";
 import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
 import { UpdateSpellDto } from "@/resources/spells/dtos/update-spell.dto";
+import { UpdateSpellTranslationDto } from "@/resources/spells/dtos/update-spell-translation.dto";
 import { CreateSpellDto } from "@/resources/spells/dtos/create-spell.dto";
+import { CreateSpellTranslationDto } from "@/resources/spells/dtos/create-spell-translation.dto";
 import { SpellsMapper } from "@/resources/spells/mappers/spells.mapper";
+import { DeleteTranslationResponseDto } from "@/resources/spells/dtos/delete-translation.dto";
+import {
+  SpellTranslationSummaryDto,
+  SpellTranslationsListDto,
+} from "@/resources/spells/dtos/spell-translation-summary.dto";
 
 @Injectable()
 export class SpellsService {
@@ -235,6 +245,441 @@ export class SpellsService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       const message: string = `Error while deleting spell #${id}`;
+      this.logger.error(`${message}: ${error}`);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  async findOneWithAllTranslations(id: Types.ObjectId): Promise<Spell> {
+    try {
+      const projection: any = {
+        tag: 1,
+        languages: 1,
+        translations: 1,
+        deletedAt: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      };
+
+      const start: number = Date.now();
+      const spell: Spell = await this.spellModel.findById(id).select(projection).exec();
+      const end: number = Date.now();
+
+      if (!spell) {
+        const message = `Spell #${id} not found`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      this.logger.log(`Spell #${id} found with all translations in ${end - start}ms`);
+
+      return spell;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while fetching spell #${id}`;
+      this.logger.error(`${message}: ${error}`);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  /**
+   * Get all available translations for a spell
+   * @param id Spell ID
+   * @returns List of translations with basic metadata
+   */
+  async getTranslations(id: Types.ObjectId): Promise<IResponse<SpellTranslationsListDto>> {
+    try {
+      const start: number = Date.now();
+      const spell: Spell = await this.spellModel.findById(id).exec();
+      const end: number = Date.now();
+
+      if (!spell) {
+        const message = `Spell #${id} not found`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      if (spell.deletedAt) {
+        const message = `Spell #${id} has been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
+      const translations: SpellTranslationSummaryDto[] = [];
+
+      for (const [lang, content] of spell.translations) {
+        // Skip translations that have been deleted
+        if (content.deletedAt) {
+          continue;
+        }
+
+        translations.push({
+          lang,
+          srd: content.srd,
+          name: content.name,
+          createdAt: content.createdAt,
+          updatedAt: content.updatedAt,
+        });
+      }
+
+      const message: string = `Spell #${id} translations found in ${end - start}ms`;
+      this.logger.log(message);
+
+      return {
+        message,
+        data: {
+          spellId: id.toString(),
+          tag: spell.tag,
+          translations,
+        },
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while fetching translations for spell #${id}`;
+      this.logger.error(`${message}: ${error}`);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  /**
+   * Get a specific translation for a spell
+   * @param id Spell ID
+   * @param lang ISO 2 letters language code
+   * @returns The translation content in the specified language
+   */
+  async getTranslation(id: Types.ObjectId, lang: string): Promise<IResponse<SpellContent>> {
+    try {
+      const start: number = Date.now();
+      const spell: Spell = await this.spellModel.findById(id).exec();
+      const end: number = Date.now();
+
+      if (!spell) {
+        const message = `Spell #${id} not found`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      if (spell.deletedAt) {
+        const message = `Spell #${id} has been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
+      const translation: SpellContent = spell.translations.get(lang);
+
+      if (!translation) {
+        const message = `Translation '${lang}' not found for spell #${id}`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      if (translation.deletedAt) {
+        const message = `Translation '${lang}' for spell #${id} has been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
+      const message: string = `Spell #${id} translation '${lang}' found in ${end - start}ms`;
+      this.logger.log(message);
+
+      return {
+        message,
+        data: translation,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while fetching translation '${lang}' for spell #${id}`;
+      this.logger.error(`${message}: ${error}`);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  async deleteTranslation(id: Types.ObjectId, lang: string, spell: Spell): Promise<DeleteTranslationResponseDto> {
+    try {
+      // Vérifier que la traduction existe
+      const translation: SpellContent = spell.translations.get(lang);
+
+      if (!translation) {
+        const message = `Translation '${lang}' not found for spell #${id}`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      // Vérifier que la traduction n'est pas déjà supprimée
+      if (translation.deletedAt) {
+        const message = `Translation '${lang}' for spell #${id} has already been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
+      // Vérifier que la traduction n'est pas SRD (INTERDICTION ABSOLUE)
+      if (translation.srd === true) {
+        const message = `Cannot delete SRD translation '${lang}' for spell #${id}: SRD translations are protected and cannot be deleted`;
+        this.logger.error(message);
+        throw new ForbiddenException(message);
+      }
+
+      // Compter les traductions actives (non supprimées)
+      const activeTranslations = Array.from(spell.translations.entries()).filter(([, content]) => !content.deletedAt);
+
+      // Empêcher la suppression si c'est la dernière traduction active
+      if (activeTranslations.length <= 1) {
+        const message = `Cannot delete translation '${lang}' for spell #${id}: it is the last active translation`;
+        this.logger.error(message);
+        throw new ForbiddenException(message);
+      }
+
+      const start: number = Date.now();
+      const deleteDate: Date = new Date();
+
+      // Mettre à jour le deletedAt de la traduction et retirer la langue du tableau languages
+      const updatedLanguages = spell.languages.filter((l) => l !== lang);
+
+      await this.spellModel
+        .updateOne(
+          { _id: id },
+          {
+            $set: {
+              [`translations.${lang}.deletedAt`]: deleteDate,
+              languages: updatedLanguages,
+            },
+          },
+        )
+        .exec();
+
+      const end: number = Date.now();
+
+      const message: string = `Translation '${lang}' for spell #${id} deleted in ${end - start}ms`;
+      this.logger.log(message);
+
+      return {
+        message,
+        deletedLanguage: lang,
+        remainingLanguages: updatedLanguages,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while deleting translation '${lang}' for spell #${id}`;
+      this.logger.error(`${message}: ${error}`);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  async addTranslation(
+    id: Types.ObjectId,
+    lang: string,
+    translationDto: CreateSpellTranslationDto,
+    isAdmin: boolean = false,
+  ): Promise<IResponse<Spell>> {
+    try {
+      // Validate language format
+      if (!/^[a-z]{2}$/.test(lang)) {
+        const message = `Language code '${lang}' must be a 2-letter ISO code in lowercase (e.g., fr, en, es)`;
+        this.logger.error(message);
+        throw new ForbiddenException(message);
+      }
+
+      const spell: Spell = await this.spellModel.findById(id).exec();
+
+      if (!spell) {
+        const message = `Spell #${id} not found`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      if (spell.deletedAt) {
+        const message = `Spell #${id} has been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
+      if (spell.languages.includes(lang)) {
+        const message = `Translation for language '${lang}' already exists for spell #${id}`;
+        this.logger.error(message);
+        throw new ConflictException(message);
+      }
+
+      // Validate components count consistency with existing translations
+      const existingTranslation = spell.translations.values().next().value as SpellContent;
+      if (existingTranslation && existingTranslation.components) {
+        const existingCount = existingTranslation.components.length;
+        const newCount = translationDto.components.length;
+        if (existingCount !== newCount) {
+          const message = `Components count mismatch: new translation has ${newCount} component(s) but existing translations have ${existingCount} component(s)`;
+          this.logger.error(message);
+          throw new BadRequestException(message);
+        }
+      }
+
+      // Check permissions for homebrew spells (tag=0)
+      const requestedSrd = translationDto.srd ?? false;
+
+      if (spell.tag === 0) {
+        // For homebrew, user must be creator (not implemented yet) or admin
+        // For now, allow but enforce srd: false for non-admins
+        if (!isAdmin && requestedSrd) {
+          const message = `Only administrators can create SRD translations for spell #${id}`;
+          this.logger.error(message);
+          throw new ForbiddenException(message);
+        }
+      } else {
+        // For official spells (tag=1), only admins can add translations
+        if (!isAdmin) {
+          const message = `Only administrators can add translations to official spells (spell #${id})`;
+          this.logger.error(message);
+          throw new ForbiddenException(message);
+        }
+      }
+
+      // Create the translation content
+      const translationContent: SpellContent = new SpellContent();
+      translationContent.srd = requestedSrd;
+      translationContent.name = translationDto.name;
+      translationContent.description = translationDto.description;
+      translationContent.level = translationDto.level;
+      translationContent.school = translationDto.school;
+      translationContent.castingTime = translationDto.castingTime;
+      translationContent.range = translationDto.range;
+      translationContent.components = translationDto.components;
+      translationContent.duration = translationDto.duration;
+      translationContent.effectType = translationDto.effectType;
+      translationContent.damage = translationDto.damage;
+      translationContent.healing = translationDto.healing;
+      translationContent.createdAt = new Date();
+      translationContent.updatedAt = new Date();
+      translationContent.deletedAt = null;
+
+      const start: number = Date.now();
+
+      // Add the translation to the translations map
+      const updateQuery: any = {
+        $set: {
+          [`translations.${lang}`]: translationContent,
+        },
+        $addToSet: {
+          languages: lang,
+        },
+        updatedAt: new Date(),
+      };
+
+      // If adding an SRD translation to a homebrew spell, update tag to 1
+      if (requestedSrd && spell.tag === 0) {
+        updateQuery.$set.tag = 1;
+      }
+
+      await this.spellModel.updateOne({ _id: id }, updateQuery).exec();
+
+      const end: number = Date.now();
+
+      // Fetch updated spell
+      const updatedSpell: Spell = await this.spellModel.findById(id).exec();
+
+      const message: string = `Translation '${lang}' added to spell #${id} in ${end - start}ms`;
+      this.logger.log(message);
+
+      // Filter to show only the newly added translation
+      const filteredSpell = this.mapper.calculAvailablesLanguages(updatedSpell);
+      const newTranslation = filteredSpell.translations.get(lang);
+      filteredSpell.translations = new Map<string, SpellContent>();
+      filteredSpell.translations.set(lang, newTranslation);
+
+      return {
+        message,
+        data: filteredSpell,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while adding translation to spell #${id}`;
+      this.logger.error(`${message}: ${error}`);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  /**
+   * Update a specific translation of a spell
+   * @param id Spell ID
+   * @param lang Language code (ISO 2 letters)
+   * @param updateData Partial update data for the translation
+   * @returns Updated spell
+   */
+  async updateTranslation(
+    id: Types.ObjectId,
+    lang: string,
+    updateData: UpdateSpellTranslationDto,
+  ): Promise<IResponse<SpellContent>> {
+    try {
+      const start: number = Date.now();
+
+      // Fetch the spell
+      const spell: Spell = await this.spellModel.findById(id).exec();
+
+      if (!spell) {
+        const message = `Spell #${id} not found`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      if (spell.deletedAt) {
+        const message = `Spell #${id} has been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
+      // Check if the translation exists
+      const translation: SpellContent = spell.translations.get(lang);
+      if (!translation) {
+        const message = `Translation '${lang}' not found for spell #${id}`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      // Check if translation has been deleted
+      if (translation.deletedAt) {
+        const message = `Translation '${lang}' for spell #${id} has been deleted`;
+        this.logger.error(message);
+        throw new GoneException(message);
+      }
+
+      // Check if components modification is allowed
+      // Components can be modified only if the count remains the same (to allow localized component names)
+      if (updateData.components !== undefined) {
+        const currentComponentsCount = translation.components?.length ?? 0;
+        const newComponentsCount = updateData.components.length;
+        if (currentComponentsCount !== newComponentsCount) {
+          const message = `Cannot modify components count for spell #${id}: current translation has ${currentComponentsCount} component(s), but ${newComponentsCount} were provided. Components count must be consistent across all translations.`;
+          this.logger.error(message);
+          throw new ForbiddenException(message);
+        }
+      }
+
+      // Build the update object for MongoDB
+      const updateFields: Record<string, any> = {};
+      for (const [key, value] of Object.entries(updateData)) {
+        if (value !== undefined) {
+          updateFields[`translations.${lang}.${key}`] = value;
+        }
+      }
+
+      // Always update the updatedAt timestamp
+      updateFields[`translations.${lang}.updatedAt`] = new Date();
+
+      await this.spellModel.updateOne({ _id: id }, { $set: updateFields }).exec();
+
+      // Fetch the updated translation
+      const updatedSpell: Spell = await this.spellModel.findById(id).exec();
+      const updatedTranslation: SpellContent = updatedSpell.translations.get(lang);
+
+      const end: number = Date.now();
+      const message: string = `Translation '${lang}' for spell #${id} updated in ${end - start}ms`;
+      this.logger.log(message);
+
+      return {
+        message,
+        data: updatedTranslation,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while updating translation '${lang}' for spell #${id}`;
       this.logger.error(`${message}: ${error}`);
       throw new InternalServerErrorException(message);
     }

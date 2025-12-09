@@ -382,6 +382,459 @@
         ]
       }
     },
+    "/spells/{id}/translations": {
+      "get": {
+        "operationId": "SpellsController_getTranslations",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the spell to get translations for",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spell translations found successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/SpellTranslationsListDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error while fetching spell #ID: Id is not a valid mongoose id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Spell #ID not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Spell #ID has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all available translations for a spell",
+        "tags": [
+          "Spells"
+        ]
+      }
+    },
+    "/spells/{id}/translations/{lang}": {
+      "get": {
+        "operationId": "SpellsController_getTranslation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the spell to get the translation for",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "The ISO 2 letters language code (e.g., 'fr', 'es', 'de')",
+            "schema": {
+              "example": "fr",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spell translation found successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/SpellContent"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error while fetching spell #ID: Id is not a valid mongoose id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Spell #ID not found or translation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Spell #ID has been deleted or translation has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a specific translation for a spell by language code",
+        "tags": [
+          "Spells"
+        ]
+      },
+      "post": {
+        "operationId": "SpellsController_addTranslation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the spell to add translation to",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "The ISO 2-letter language code in lowercase",
+            "schema": {
+              "example": "fr",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSpellTranslationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Translation added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Spell"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid language code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User does not have permission to add translation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Spell #ID not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Translation for this language already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Spell #ID has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add a new translation to an existing spell",
+        "tags": [
+          "Spells"
+        ]
+      },
+      "patch": {
+        "operationId": "SpellsController_updateTranslation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the spell",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "The ISO 2-letter code of the language to update",
+            "schema": {
+              "example": "en",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSpellTranslationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Translation updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/SpellContent"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid language code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cannot modify components count (must remain consistent across translations)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Spell or translation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Spell or translation has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a specific translation of a spell",
+        "tags": [
+          "Spells"
+        ]
+      },
+      "delete": {
+        "operationId": "SpellsController_deleteTranslation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the spell",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "The ISO 2-letter code of the language to delete",
+            "schema": {
+              "example": "fr",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Translation deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteTranslationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid spell ID or language code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cannot delete SRD translation or last active translation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Spell or translation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Spell or translation has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a specific translation for a spell",
+        "tags": [
+          "Spells"
+        ]
+      }
+    },
     "/monsters": {
       "get": {
         "operationId": "MonstersController_findAll",
@@ -942,6 +1395,118 @@
         "tags": [
           "Monsters"
         ]
+      },
+      "post": {
+        "operationId": "MonstersController_addTranslation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the monster to add a translation to",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "The ISO 2 letter code of the language (e.g., fr, es, de)",
+            "schema": {
+              "example": "fr",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMonsterTranslationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Translation added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Monster"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid language code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - User doesn't have permission to add this translation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Monster not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Translation for this language already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Monster has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add a new translation to a monster",
+        "tags": [
+          "Monsters"
+        ]
       }
     }
   },
@@ -981,12 +1546,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T16:42:42.795Z"
+            "example": "2025-12-09T07:09:28.429Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T16:42:42.795Z"
+            "example": "2025-12-09T07:09:28.429Z"
           },
           "name": {
             "type": "string",
@@ -1151,6 +1716,103 @@
           "pagination"
         ]
       },
+      "DeleteTranslationResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Translation 'fr' for spell #507f1f77bcf86cd799439011 deleted in 15ms",
+            "description": "Success message"
+          },
+          "deletedLanguage": {
+            "type": "string",
+            "example": "fr",
+            "description": "The language code of the deleted translation"
+          },
+          "remainingLanguages": {
+            "example": [
+              "en",
+              "es"
+            ],
+            "description": "Remaining active languages after deletion",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "message",
+          "deletedLanguage",
+          "remainingLanguages"
+        ]
+      },
+      "SpellTranslationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "lang": {
+            "type": "string",
+            "example": "en",
+            "description": "ISO 2 letters language code"
+          },
+          "srd": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether this translation is from SRD"
+          },
+          "name": {
+            "type": "string",
+            "example": "Fireball",
+            "description": "Name of the spell in this language"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-12-09T07:09:28.653Z",
+            "description": "Creation date of this translation"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-12-09T07:09:28.653Z",
+            "description": "Last update date of this translation"
+          }
+        },
+        "required": [
+          "lang",
+          "srd",
+          "name",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SpellTranslationsListDto": {
+        "type": "object",
+        "properties": {
+          "spellId": {
+            "type": "string",
+            "example": "507f1f77bcf86cd799439011",
+            "description": "Spell ID"
+          },
+          "tag": {
+            "type": "number",
+            "example": 1,
+            "description": "Spell tag"
+          },
+          "translations": {
+            "description": "List of available translations",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpellTranslationSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "spellId",
+          "tag",
+          "translations"
+        ]
+      },
       "InvalidParamDto": {
         "type": "object",
         "properties": {
@@ -1307,6 +1969,152 @@
           "lang",
           "spellContent"
         ]
+      },
+      "CreateSpellTranslationDto": {
+        "type": "object",
+        "properties": {
+          "srd": {
+            "type": "boolean",
+            "example": false,
+            "description": "Indicates if this translation is from SRD (only admins can set true)"
+          },
+          "name": {
+            "type": "string",
+            "example": "Fireball"
+          },
+          "description": {
+            "type": "string",
+            "example": "A bright streak flashes from your pointing finger to a point you choose within range."
+          },
+          "level": {
+            "type": "number",
+            "example": 3,
+            "description": "Spell level (0-9)"
+          },
+          "school": {
+            "type": "string",
+            "example": "Evocation"
+          },
+          "castingTime": {
+            "type": "string",
+            "example": "1 action"
+          },
+          "range": {
+            "type": "string",
+            "example": "150 feet"
+          },
+          "components": {
+            "example": [
+              "V",
+              "S",
+              "M"
+            ],
+            "description": "Spell components. Can be localized (e.g., V/S/M in English, P/G/C in French). Maximum 3 components.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "duration": {
+            "type": "string",
+            "example": "Instantaneous"
+          },
+          "effectType": {
+            "type": "number",
+            "example": 0
+          },
+          "damage": {
+            "type": "string",
+            "example": "8d6"
+          },
+          "healing": {
+            "type": "string",
+            "example": "Heal 4d8 + spellcasting modifier"
+          }
+        },
+        "required": [
+          "srd",
+          "name",
+          "description",
+          "level",
+          "school",
+          "castingTime",
+          "range",
+          "components",
+          "duration",
+          "effectType",
+          "damage",
+          "healing"
+        ]
+      },
+      "UpdateSpellTranslationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Fireball",
+            "description": "The name of the spell"
+          },
+          "description": {
+            "type": "string",
+            "example": "A bright streak flashes from your pointing finger to a point you choose within range.",
+            "description": "The description of the spell"
+          },
+          "level": {
+            "type": "number",
+            "example": 3,
+            "description": "Spell level (0-9)",
+            "minimum": 0,
+            "maximum": 9
+          },
+          "school": {
+            "type": "string",
+            "example": "Evocation",
+            "description": "The school of magic"
+          },
+          "castingTime": {
+            "type": "string",
+            "example": "1 action",
+            "description": "The casting time of the spell"
+          },
+          "range": {
+            "type": "string",
+            "example": "150 feet",
+            "description": "The range of the spell"
+          },
+          "components": {
+            "example": [
+              "V",
+              "S",
+              "M"
+            ],
+            "description": "Spell components (V = Verbal, S = Somatic, M = Material)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "duration": {
+            "type": "string",
+            "example": "Instantaneous",
+            "description": "The duration of the spell"
+          },
+          "effectType": {
+            "type": "number",
+            "example": 1,
+            "description": "The effect type of the spell"
+          },
+          "damage": {
+            "type": "string",
+            "example": "8d6",
+            "description": "The damage of the spell"
+          },
+          "healing": {
+            "type": "string",
+            "example": "Heal 4d8 + spellcasting modifier",
+            "description": "The healing of the spell"
+          }
+        }
       },
       "Speed": {
         "type": "object",
@@ -1796,12 +2604,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T16:42:43.367Z"
+            "example": "2025-12-09T07:09:29.257Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T16:42:43.367Z"
+            "example": "2025-12-09T07:09:29.257Z"
           },
           "name": {
             "type": "string",
@@ -1911,13 +2719,13 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T16:42:43.435Z",
+            "example": "2025-12-09T07:09:29.370Z",
             "description": "Creation date of this translation"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-08T16:42:43.435Z",
+            "example": "2025-12-09T07:09:29.370Z",
             "description": "Last update date of this translation"
           }
         },
@@ -2732,6 +3540,160 @@
         },
         "required": [
           "tag"
+        ]
+      },
+      "StatsTranslationDto": {
+        "type": "object",
+        "properties": {
+          "languages": {
+            "description": "Langues parlées par le monstre traduites",
+            "example": [
+              "Commun",
+              "Draconique"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AbilityTranslationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nom de la capacité traduit",
+            "example": "Vision dans le noir"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description de la capacité traduite",
+            "example": "Le monstre peut voir dans l'obscurité jusqu'à 60 pieds."
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ]
+      },
+      "ActionTranslationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nom de l'action traduit",
+            "example": "Attaque multiattaque"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description de l'action traduite",
+            "example": "Le dragon effectue trois attaques : une morsure et deux griffes."
+          }
+        }
+      },
+      "ActionsTranslationDto": {
+        "type": "object",
+        "properties": {
+          "standard": {
+            "description": "Actions standard traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionTranslationDto"
+            }
+          },
+          "legendary": {
+            "description": "Actions légendaires traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionTranslationDto"
+            }
+          },
+          "lair": {
+            "description": "Actions d'antre traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionTranslationDto"
+            }
+          },
+          "reactions": {
+            "description": "Réactions traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionTranslationDto"
+            }
+          },
+          "bonus": {
+            "description": "Actions bonus traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionTranslationDto"
+            }
+          }
+        }
+      },
+      "ProfileTranslationDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Type du monstre traduit",
+            "example": "Dragon"
+          },
+          "subtype": {
+            "type": "string",
+            "description": "Sous-type du monstre traduit",
+            "example": "Rouge"
+          },
+          "alignment": {
+            "type": "string",
+            "description": "Alignement du monstre traduit",
+            "example": "Chaotique mauvais"
+          }
+        }
+      },
+      "CreateMonsterTranslationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nom du monstre traduit",
+            "example": "Dragon Rouge Adulte"
+          },
+          "stats": {
+            "description": "Traduction des statistiques (uniquement les langues)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsTranslationDto"
+              }
+            ]
+          },
+          "abilities": {
+            "description": "Capacités spéciales du monstre traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AbilityTranslationDto"
+            }
+          },
+          "actions": {
+            "description": "Actions du monstre traduites (name et description uniquement)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActionsTranslationDto"
+              }
+            ]
+          },
+          "profile": {
+            "description": "Profil du monstre traduit (type, sous-type, alignement)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfileTranslationDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
         ]
       }
     }
