@@ -22,7 +22,12 @@ import {
   CreateChallengeDto,
   CreateProfileDto,
 } from "@/resources/monsters/dtos/create-monster-content.dto";
-import { CreateMonsterTranslationDto } from "@/resources/monsters/dtos/create-monster-translation.dto";
+import {
+  CreateMonsterTranslationDto,
+  AbilityTranslationDto,
+  ActionTranslationDto,
+} from "@/resources/monsters/dtos/create-monster-translation.dto";
+import { UpdateMonsterTranslationDto } from "@/resources/monsters/dtos/update-monster-translation.dto";
 import { Stats } from "@/resources/monsters/schemas/stats/stats.schema";
 import { Speed } from "@/resources/monsters/schemas/stats/sub/speed.schema";
 import { AbilityScores } from "@/resources/monsters/schemas/stats/sub/abilityScores.schema";
@@ -234,11 +239,142 @@ export class MonstersMapper extends DtoMapper<Monster> {
   }
 
   /**
+   * Update an existing MonsterContent translation with partial text data.
+   * This method only updates textual fields while preserving all numeric/game values.
+   * Uses the same rules as dtoTranslationToEntity for consistency.
+   *
+   * @param dto UpdateMonsterTranslationDto with partial text translations
+   * @param existing Current MonsterContent to update
+   * @returns Record of field paths and values to update in MongoDB
+   */
+  updateTranslationEntity(dto: UpdateMonsterTranslationDto, existing: MonsterContent): Record<string, any> {
+    const updateFields: Record<string, any> = {};
+
+    // Update name if provided
+    if (dto.name !== undefined) {
+      updateFields["name"] = dto.name;
+    }
+
+    // Stats: only languages can be updated (other values are numeric)
+    if (dto.stats?.languages !== undefined) {
+      // Create new stats object preserving all numeric values
+      const stats = new Stats();
+      stats.size = existing.stats?.size ?? 0;
+      stats.maxHitPoints = existing.stats?.maxHitPoints ?? 0;
+      stats.currentHitPoints = existing.stats?.currentHitPoints ?? 0;
+      stats.tempHitPoints = existing.stats?.tempHitPoints ?? 0;
+      stats.armorClass = existing.stats?.armorClass ?? 10;
+      stats.passivePerception = existing.stats?.passivePerception ?? 0;
+      stats.speed = existing.stats?.speed;
+      stats.abilityScores = existing.stats?.abilityScores;
+      stats.savingThrows = existing.stats?.savingThrows;
+      stats.skills = existing.stats?.skills;
+      stats.senses = existing.stats?.senses;
+      stats.languages = dto.stats.languages;
+      updateFields["stats"] = stats;
+    }
+
+    // Abilities: update name and description only
+    if (dto.abilities !== undefined && existing.abilities && existing.abilities.length > 0) {
+      updateFields["abilities"] = this.mergeAbilities(existing.abilities, dto.abilities);
+    }
+
+    // Actions: update name and description only, preserve numeric values
+    if (dto.actions !== undefined && existing.actions) {
+      updateFields["actions"] = this.mergeActionsForUpdate(existing.actions, dto.actions);
+    }
+
+    // Profile: update textual fields only
+    if (dto.profile !== undefined && existing.profile) {
+      const profile = new Profile();
+      profile.type = dto.profile.type ?? existing.profile.type;
+      profile.subtype = dto.profile.subtype ?? existing.profile.subtype;
+      profile.alignment = dto.profile.alignment ?? existing.profile.alignment;
+      updateFields["profile"] = profile;
+    }
+
+    return updateFields;
+  }
+
+  /**
+   * Helper method to merge ability translations with existing abilities.
+   * Preserves the original abilities array structure, only updating name and description.
+   */
+  private mergeAbilities(existingAbilities: Ability[], translatedAbilities: AbilityTranslationDto[]): Ability[] {
+    return existingAbilities.map((existingAbility, index) => {
+      const ability = new Ability();
+      if (translatedAbilities[index]) {
+        ability.name = translatedAbilities[index].name ?? existingAbility.name;
+        ability.description = translatedAbilities[index].description ?? existingAbility.description;
+      } else {
+        ability.name = existingAbility.name;
+        ability.description = existingAbility.description;
+      }
+      return ability;
+    });
+  }
+
+  /**
+   * Helper method to merge action translations with existing actions.
+   * Preserves all numeric values (attackBonus, damage, etc.), only updates name and description.
+   */
+  private mergeActionsForUpdate(
+    existingActions: Actions,
+    translatedActions: {
+      standard?: ActionTranslationDto[];
+      legendary?: ActionTranslationDto[];
+      lair?: ActionTranslationDto[];
+      reactions?: ActionTranslationDto[];
+      bonus?: ActionTranslationDto[];
+    },
+  ): Actions {
+    const actions = new Actions();
+    actions.legendaryActionsPerDay = existingActions.legendaryActionsPerDay;
+
+    // Helper function to merge action arrays
+    const mergeActionArray = (
+      existingArray: Action[] | undefined,
+      translatedArray?: ActionTranslationDto[],
+    ): Action[] => {
+      if (!existingArray) return [];
+      return existingArray.map((existingAction, index) => {
+        const action = new Action();
+        // Preserve all numeric/game values
+        action.type = existingAction.type;
+        action.attackBonus = existingAction.attackBonus;
+        action.damage = existingAction.damage;
+        action.range = existingAction.range;
+        action.save = existingAction.save;
+        action.usage = existingAction.usage;
+        action.legendaryActionCost = existingAction.legendaryActionCost;
+
+        // Apply translations if provided
+        if (translatedArray && translatedArray[index]) {
+          action.name = translatedArray[index].name ?? existingAction.name;
+          action.description = translatedArray[index].description ?? existingAction.description;
+        } else {
+          action.name = existingAction.name;
+          action.description = existingAction.description;
+        }
+        return action;
+      });
+    };
+
+    actions.standard = mergeActionArray(existingActions.standard, translatedActions.standard);
+    actions.legendary = mergeActionArray(existingActions.legendary, translatedActions.legendary);
+    actions.lair = mergeActionArray(existingActions.lair, translatedActions.lair);
+    actions.reactions = mergeActionArray(existingActions.reactions, translatedActions.reactions);
+    actions.bonus = mergeActionArray(existingActions.bonus, translatedActions.bonus);
+
+    return actions;
+  }
+
+  /**
    * Convert CreateStatsDto to Stats entity
    * @param dto CreateStatsDto source
    * @returns Stats entity
    */
-  private dtoStatsToEntity(dto: CreateStatsDto): Stats {
+  public dtoStatsToEntity(dto: CreateStatsDto): Stats {
     const stats: Stats = new Stats();
 
     stats.size = dto.size ?? 0;
@@ -379,7 +515,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateAffinitiesDto source
    * @returns Affinities entity
    */
-  private dtoAffinitiesToEntity(dto: CreateAffinitiesDto): Affinities {
+  public dtoAffinitiesToEntity(dto: CreateAffinitiesDto): Affinities {
     const affinities: Affinities = new Affinities();
 
     affinities.resistances = dto.resistances ?? [];
@@ -395,7 +531,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateAbilityDto source
    * @returns Ability entity
    */
-  private dtoAbilityToEntity(dto: CreateAbilityDto): Ability {
+  public dtoAbilityToEntity(dto: CreateAbilityDto): Ability {
     const ability: Ability = new Ability();
 
     ability.name = dto.name;
@@ -409,14 +545,19 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateSpellcastingDto source
    * @returns Spellcasting entity
    */
-  private dtoSpellcastingToEntity(dto: CreateSpellcastingDto): Spellcasting {
+  public dtoSpellcastingToEntity(dto: CreateSpellcastingDto): Spellcasting {
     const spellcasting: Spellcasting = new Spellcasting();
 
     spellcasting.ability = dto.ability;
     spellcasting.saveDC = dto.saveDC;
     spellcasting.attackBonus = dto.attackBonus ?? 0;
     spellcasting.totalSlots = dto.totalSlots ?? 0;
-    spellcasting.spells = dto.spells?.map((id) => new Types.ObjectId(id)) ?? [];
+
+    // Safely convert spell IDs, filtering out invalid ones
+    spellcasting.spells =
+      dto.spells
+        ?.filter((id) => typeof id === "string" && id.length === 24 && Types.ObjectId.isValid(id))
+        .map((id) => new Types.ObjectId(id)) ?? [];
 
     // Convert spellSlotsByLevel (Record ou Map)
     if (dto.spellSlotsByLevel) {
@@ -438,7 +579,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateActionsDto source
    * @returns Actions entity
    */
-  private dtoActionsToEntity(dto: CreateActionsDto): Actions {
+  public dtoActionsToEntity(dto: CreateActionsDto): Actions {
     const actions: Actions = new Actions();
 
     actions.standard = dto.standard?.map((action) => this.dtoActionToEntity(action)) ?? [];
@@ -534,7 +675,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateChallengeDto source
    * @returns Challenge entity
    */
-  private dtoChallengeToEntity(dto: CreateChallengeDto): Challenge {
+  public dtoChallengeToEntity(dto: CreateChallengeDto): Challenge {
     const challenge: Challenge = new Challenge();
 
     challenge.challengeRating = dto.challengeRating;
@@ -548,7 +689,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateProfileDto source
    * @returns Profile entity
    */
-  private dtoProfileToEntity(dto: CreateProfileDto): Profile {
+  public dtoProfileToEntity(dto: CreateProfileDto): Profile {
     const profile: Profile = new Profile();
 
     profile.type = dto.type;

@@ -1479,6 +1479,316 @@ describe("MonstersService - addTranslation", () => {
   });
 });
 
+describe("MonstersService - updateTranslation", () => {
+  let service: MonstersService;
+  let monsterModel: any;
+  let spellModel: any;
+
+  const mockMonsterId = new Types.ObjectId();
+
+  const mockMonster = {
+    _id: mockMonsterId,
+    tag: 0, // homebrew
+    languages: ["en", "fr"],
+    deletedAt: null,
+    translations: new Map([
+      [
+        "en",
+        {
+          srd: false,
+          name: "Goblin",
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+      [
+        "fr",
+        {
+          srd: false,
+          name: "Gobelin",
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+    ]),
+  };
+
+  const mockUpdateDto = {
+    name: "Updated Goblin Name",
+  };
+
+  beforeEach(async () => {
+    monsterModel = {
+      findById: jest.fn().mockReturnThis(),
+      updateOne: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    spellModel = {
+      find: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      exec: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MonstersService,
+        { provide: getModelToken(Monster.name), useValue: monsterModel },
+        { provide: getModelToken(Spell.name), useValue: spellModel },
+      ],
+    }).compile();
+
+    service = module.get<MonstersService>(MonstersService);
+  });
+
+  it("should update a translation successfully", async () => {
+    const updatedMonster = {
+      ...mockMonster,
+      translations: new Map([
+        [
+          "en",
+          {
+            srd: false,
+            name: "Updated Goblin Name",
+            deletedAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        [
+          "fr",
+          {
+            srd: false,
+            name: "Gobelin",
+            deletedAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      ]),
+    };
+
+    monsterModel.exec
+      .mockResolvedValueOnce(mockMonster)
+      .mockResolvedValueOnce({ acknowledged: true })
+      .mockResolvedValueOnce(updatedMonster);
+
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
+
+    const result = await service.updateTranslation(mockMonsterId, "en", mockUpdateDto, false);
+
+    expect(result.data).toBeDefined();
+    expect(monsterModel.updateOne).toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/Translation 'en' for monster .* updated in \d+ms/));
+
+    logSpy.mockRestore();
+  });
+
+  it("should throw BadRequestException for invalid language code", async () => {
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.updateTranslation(mockMonsterId, "FRA", mockUpdateDto, false)).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(service.updateTranslation(mockMonsterId, "f", mockUpdateDto, false)).rejects.toThrow(
+      BadRequestException,
+    );
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw NotFoundException if monster does not exist", async () => {
+    monsterModel.exec.mockResolvedValue(null);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.updateTranslation(mockMonsterId, "en", mockUpdateDto, false)).rejects.toThrow(
+      NotFoundException,
+    );
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw GoneException if monster is deleted", async () => {
+    monsterModel.exec.mockResolvedValue({ ...mockMonster, deletedAt: new Date() });
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.updateTranslation(mockMonsterId, "en", mockUpdateDto, false)).rejects.toThrow(GoneException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw NotFoundException if translation does not exist", async () => {
+    const monsterWithoutFr = {
+      ...mockMonster,
+      translations: new Map([
+        [
+          "en",
+          {
+            srd: false,
+            name: "Goblin",
+            deletedAt: null,
+          },
+        ],
+      ]),
+    };
+
+    monsterModel.exec.mockResolvedValue(monsterWithoutFr);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.updateTranslation(mockMonsterId, "fr", mockUpdateDto, false)).rejects.toThrow(
+      NotFoundException,
+    );
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw GoneException if translation is deleted", async () => {
+    const monsterWithDeletedTranslation = {
+      ...mockMonster,
+      translations: new Map([
+        [
+          "en",
+          {
+            srd: false,
+            name: "Goblin",
+            deletedAt: new Date(),
+          },
+        ],
+      ]),
+    };
+
+    monsterModel.exec.mockResolvedValue(monsterWithDeletedTranslation);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.updateTranslation(mockMonsterId, "en", mockUpdateDto, false)).rejects.toThrow(GoneException);
+
+    errSpy.mockRestore();
+  });
+
+  it("should throw ForbiddenException if trying to modify SRD translation without admin rights", async () => {
+    const monsterWithSrdTranslation = {
+      ...mockMonster,
+      translations: new Map([
+        [
+          "en",
+          {
+            srd: true,
+            name: "Goblin",
+            deletedAt: null,
+          },
+        ],
+      ]),
+    };
+
+    monsterModel.exec.mockResolvedValue(monsterWithSrdTranslation);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.updateTranslation(mockMonsterId, "en", mockUpdateDto, false)).rejects.toThrow(
+      ForbiddenException,
+    );
+
+    errSpy.mockRestore();
+  });
+
+  it("should allow admin to modify SRD translation", async () => {
+    const monsterWithSrdTranslation = {
+      ...mockMonster,
+      tag: 1,
+      translations: new Map([
+        [
+          "en",
+          {
+            srd: true,
+            name: "Goblin",
+            deletedAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      ]),
+    };
+
+    const updatedMonster = {
+      ...monsterWithSrdTranslation,
+      translations: new Map([
+        [
+          "en",
+          {
+            srd: true,
+            name: "Updated Goblin Name",
+            deletedAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      ]),
+    };
+
+    monsterModel.exec
+      .mockResolvedValueOnce(monsterWithSrdTranslation)
+      .mockResolvedValueOnce({ acknowledged: true })
+      .mockResolvedValueOnce(updatedMonster);
+
+    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
+
+    const result = await service.updateTranslation(mockMonsterId, "en", mockUpdateDto, true);
+
+    expect(result.data).toBeDefined();
+
+    logSpy.mockRestore();
+  });
+
+  it("should throw ForbiddenException if non-admin tries to modify official monster translation", async () => {
+    const officialMonster = {
+      ...mockMonster,
+      tag: 1, // official
+      translations: new Map([
+        [
+          "en",
+          {
+            srd: false,
+            name: "Goblin",
+            deletedAt: null,
+          },
+        ],
+      ]),
+    };
+
+    monsterModel.exec.mockResolvedValue(officialMonster);
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.updateTranslation(mockMonsterId, "en", mockUpdateDto, false)).rejects.toThrow(
+      ForbiddenException,
+    );
+
+    errSpy.mockRestore();
+  });
+
+  // Note: spellcasting, affinities, challenge, and other numeric fields
+  // are no longer modifiable via translation update - they can only be set
+  // during translation creation (copying from original)
+
+  it("should handle internal errors gracefully", async () => {
+    monsterModel.exec.mockRejectedValue(new Error("DB error"));
+
+    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
+
+    await expect(service.updateTranslation(mockMonsterId, "en", mockUpdateDto, false)).rejects.toThrow(
+      InternalServerErrorException,
+    );
+
+    errSpy.mockRestore();
+  });
+});
+
 describe("MonstersService - deleteTranslation", () => {
   let service: MonstersService;
   let monsterModel: any;
