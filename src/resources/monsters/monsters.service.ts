@@ -410,6 +410,44 @@ export class MonstersService {
   }
 
   /**
+   * Find a monster by ID with all translations (for authorization checks)
+   * @param id Monster ID
+   * @returns Monster with all translations and createdBy field
+   */
+  async findOneWithAllTranslations(id: Types.ObjectId): Promise<Monster> {
+    try {
+      const projection: any = {
+        tag: 1,
+        languages: 1,
+        translations: 1,
+        deletedAt: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        createdBy: 1,
+      };
+
+      const start: number = Date.now();
+      const monster: Monster = await this.monsterModel.findById(id).select(projection).exec();
+      const end: number = Date.now();
+
+      if (!monster) {
+        const message = `Monster #${id} not found`;
+        this.logger.error(message);
+        throw new NotFoundException(message);
+      }
+
+      this.logger.log(`Monster #${id} found with all translations in ${end - start}ms`);
+
+      return monster;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message: string = `Error while fetching monster #${id}`;
+      this.logger.error(`${message}: ${error}`);
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  /**
    * Get all available translations for a monster
    * @param id Monster ID
    * @returns List of translation summaries with basic metadata
@@ -540,9 +578,14 @@ export class MonstersService {
     }
   }
 
-  async create(createMonsterDto: CreateMonsterDto): Promise<IResponse<Monster>> {
+  async create(createMonsterDto: CreateMonsterDto, createdBy?: string): Promise<IResponse<Monster>> {
     try {
       const monster: Monster = this.mapper.dtoToEntity(createMonsterDto);
+
+      // Set the creator if provided
+      if (createdBy) {
+        monster.createdBy = createdBy;
+      }
 
       // Extract and validate all spell IDs
       const spellIds = this.extractSpellIds(monster);

@@ -203,9 +203,14 @@ export class SpellsService {
     }
   }
 
-  async create(createSpellDto: CreateSpellDto): Promise<IResponse<Spell>> {
+  async create(createSpellDto: CreateSpellDto, createdBy?: string): Promise<IResponse<Spell>> {
     try {
       const spell: Spell = this.mapper.dtoToEntity(createSpellDto);
+
+      // Set the creator if provided
+      if (createdBy) {
+        spell.createdBy = createdBy;
+      }
 
       const start: number = Date.now();
       const createdSpell = new this.spellModel(spell);
@@ -259,6 +264,7 @@ export class SpellsService {
         deletedAt: 1,
         createdAt: 1,
         updatedAt: 1,
+        createdBy: 1,
       };
 
       const start: number = Date.now();

@@ -40,6 +40,8 @@ import {
   SpellTranslationSummaryDto,
   SpellTranslationsListDto,
 } from "@/resources/spells/dtos/spell-translation-summary.dto";
+import { Public } from "@/auth/public.decorator";
+import { CurrentUser, JwtPayload } from "@/auth/current-user.decorator";
 
 @ApiExtraModels(
   Spell,
@@ -73,7 +75,12 @@ export class SpellsController {
   }
 
   @Get()
-  @ApiOperation({ summary: "Get a collection of paginated spells" })
+  @Public()
+  @ApiOperation({
+    summary: "Get a collection of paginated spells",
+    description: "Public endpoint - No authentication required",
+    security: [],
+  })
   @ApiOkResponse({
     description: "Spells found successfully",
     schema: {
@@ -95,6 +102,12 @@ export class SpellsController {
   }
 
   @Get(":id")
+  @Public()
+  @ApiOperation({
+    summary: "Get a spell by ID",
+    description: "Public endpoint - No authentication required",
+    security: [],
+  })
   @ApiParam({
     name: "id",
     type: String,
@@ -138,6 +151,7 @@ export class SpellsController {
   }
 
   @Get(":id/translations")
+  @Public()
   @ApiParam({
     name: "id",
     type: String,
@@ -145,7 +159,11 @@ export class SpellsController {
     description: "The ID of the spell to get translations for",
     example: "507f1f77bcf86cd799439011",
   })
-  @ApiOperation({ summary: "Get all available translations for a spell" })
+  @ApiOperation({
+    summary: "Get all available translations for a spell",
+    description: "Public endpoint - No authentication required",
+    security: [],
+  })
   @ApiOkResponse({
     description: "Spell translations found successfully",
     schema: {
@@ -178,6 +196,7 @@ export class SpellsController {
   }
 
   @Get(":id/translations/:lang")
+  @Public()
   @ApiParam({
     name: "id",
     type: String,
@@ -192,7 +211,11 @@ export class SpellsController {
     description: "The ISO 2 letters language code (e.g., 'fr', 'es', 'de')",
     example: "fr",
   })
-  @ApiOperation({ summary: "Get a specific translation for a spell by language code" })
+  @ApiOperation({
+    summary: "Get a specific translation for a spell by language code",
+    description: "Public endpoint - No authentication required",
+    security: [],
+  })
   @ApiOkResponse({
     description: "Spell translation found successfully",
     schema: {
@@ -261,18 +284,33 @@ export class SpellsController {
   async update(
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Body() updateData: UpdateSpellDto,
+    @CurrentUser() user: JwtPayload,
   ): Promise<IResponse<Spell>> {
-    const oldSpell: IResponse<Spell> = await this.validateResource(id, "en");
+    const oldSpell = await this.spellsService.findOneWithAllTranslations(id);
 
-    for (const [lang, translation] of oldSpell.data.translations) {
+    if (oldSpell.deletedAt) {
+      const message = `Spell #${id} has been deleted`;
+      this.logger.error(message);
+      throw new GoneException(message);
+    }
+
+    // Check if any translation is SRD - SRD resources cannot be modified
+    for (const [, translation] of oldSpell.translations) {
       if (translation.srd) {
-        const message = `Spell #${id} is in srd and cannot be modified`;
+        const message = `Spell #${id} has SRD translations and cannot be modified`;
         this.logger.error(message);
         throw new ForbiddenException(message);
       }
     }
 
-    return this.spellsService.update(id, oldSpell.data, updateData);
+    // Check if user is the owner of the resource
+    if (oldSpell.createdBy && oldSpell.createdBy !== user?.userId) {
+      const message = `You are not allowed to modify spell #${id}: you are not the owner`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
+    }
+
+    return this.spellsService.update(id, oldSpell, updateData);
   }
 
   @Post()
@@ -295,8 +333,8 @@ export class SpellsController {
     description: "Validation error",
     type: ProblemDetailsDto,
   })
-  async create(@Body() spellDto: CreateSpellDto): Promise<IResponse<Spell>> {
-    return this.spellsService.create(spellDto);
+  async create(@Body() spellDto: CreateSpellDto, @CurrentUser() user: JwtPayload): Promise<IResponse<Spell>> {
+    return this.spellsService.create(spellDto, user?.userId);
   }
 
   @Delete(":id")
@@ -328,13 +366,20 @@ export class SpellsController {
     type: ProblemDetailsDto,
   })
   @ApiResponse({ status: 410, description: "Spell #ID has been deleted", type: ProblemDetailsDto })
-  async delete(@Param("id", ParseMongoIdPipe) id: Types.ObjectId): Promise<IResponse<Spell>> {
-    const spell: IResponse<Spell> = await this.validateResource(id, "en");
+  async delete(
+    @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<IResponse<Spell>> {
+    const spell = await this.spellsService.findOneWithAllTranslations(id);
 
-    // Vérifier si au moins une traduction a srd: true
-    const hasSrdTranslation = Array.from(spell.data.translations.values()).some(
-      (translation) => translation.srd === true,
-    );
+    if (spell.deletedAt) {
+      const message = `Spell #${id} has been deleted`;
+      this.logger.error(message);
+      throw new GoneException(message);
+    }
+
+    // Check if any translation is SRD - SRD resources cannot be deleted
+    const hasSrdTranslation = Array.from(spell.translations.values()).some((translation) => translation.srd === true);
 
     if (hasSrdTranslation) {
       const message = `Cannot delete spell #${id}: it has at least one SRD translation`;
@@ -342,7 +387,14 @@ export class SpellsController {
       throw new ForbiddenException(message);
     }
 
-    return this.spellsService.delete(id, spell.data);
+    // Check if user is the owner of the resource
+    if (spell.createdBy && spell.createdBy !== user?.userId) {
+      const message = `You are not allowed to delete spell #${id}: you are not the owner`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
+    }
+
+    return this.spellsService.delete(id, spell);
   }
 
   @Post(":id/translations/:lang")
@@ -395,7 +447,23 @@ export class SpellsController {
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Param("lang") lang: string,
     @Body() translationDto: CreateSpellTranslationDto,
+    @CurrentUser() user: JwtPayload,
   ): Promise<IResponse<Spell>> {
+    // Check if user is the owner of the resource
+    const spell = await this.spellsService.findOneWithAllTranslations(id);
+
+    if (spell.deletedAt) {
+      const message = `Spell #${id} has been deleted`;
+      this.logger.error(message);
+      throw new GoneException(message);
+    }
+
+    if (spell.createdBy && spell.createdBy !== user?.userId) {
+      const message = `You are not allowed to add translations to spell #${id}: you are not the owner`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
+    }
+
     // TODO: Implement authentication/authorization to determine if user is admin
     // For now, we'll determine based on the srd flag and spell tag
     const isAdmin = false; // This should come from auth guard/decorator
@@ -472,12 +540,36 @@ export class SpellsController {
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Param("lang") lang: string,
     @Body() updateData: UpdateSpellTranslationDto,
+    @CurrentUser() user: JwtPayload,
   ): Promise<IResponse<SpellContent>> {
     // Validate lang parameter (must be 2 lowercase letters)
     if (!/^[a-z]{2}$/.test(lang)) {
       const message = `Invalid language code '${lang}': must be a 2-letter ISO code in lowercase`;
       this.logger.error(message);
       throw new BadRequestException(message);
+    }
+
+    // Check if user is the owner of the resource
+    const spell = await this.spellsService.findOneWithAllTranslations(id);
+
+    if (spell.deletedAt) {
+      const message = `Spell #${id} has been deleted`;
+      this.logger.error(message);
+      throw new GoneException(message);
+    }
+
+    // Check if the translation is SRD - SRD translations cannot be modified
+    const translation = spell.translations.get(lang);
+    if (translation?.srd) {
+      const message = `Cannot modify SRD translation '${lang}' for spell #${id}`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
+    }
+
+    if (spell.createdBy && spell.createdBy !== user?.userId) {
+      const message = `You are not allowed to modify translations for spell #${id}: you are not the owner`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
     }
 
     return this.spellsService.updateTranslation(id, lang, updateData);
@@ -526,6 +618,7 @@ export class SpellsController {
   async deleteTranslation(
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Param("lang") lang: string,
+    @CurrentUser() user: JwtPayload,
   ): Promise<DeleteTranslationResponseDto> {
     // Validate language code format
     if (!/^[a-z]{2}$/.test(lang)) {
@@ -542,6 +635,13 @@ export class SpellsController {
       const message = `Spell #${id} has been deleted`;
       this.logger.error(message);
       throw new GoneException(message);
+    }
+
+    // Check if user is the owner of the resource
+    if (spell.createdBy && spell.createdBy !== user?.userId) {
+      const message = `You are not allowed to delete translations for spell #${id}: you are not the owner`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
     }
 
     return this.spellsService.deleteTranslation(id, lang, spell);
