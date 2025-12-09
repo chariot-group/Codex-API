@@ -5,6 +5,7 @@ import { BadRequestException } from "@nestjs/common";
 import { Types } from "mongoose";
 import { PaginationMonster } from "./dtos/find-all.dto";
 import { CreateMonsterDto } from "./dtos/create-monster.dto";
+import { JwtPayload } from "@/auth/current-user.decorator";
 
 describe("MonstersController", () => {
   let controller: MonstersController;
@@ -12,10 +13,18 @@ describe("MonstersController", () => {
 
   const id = new Types.ObjectId();
 
+  const mockUser: JwtPayload = {
+    userId: "user-123",
+    username: "testuser",
+    email: "test@example.com",
+    roles: [],
+  };
+
   const mockMonster = {
     _id: id,
     tag: 1,
     languages: ["en", "fr"],
+    createdBy: "user-123",
     translations: new Map([
       ["en", { name: "Goblin", srd: false }],
       ["fr", { name: "Gobelin", srd: false }],
@@ -25,6 +34,7 @@ describe("MonstersController", () => {
   const mockService = {
     findAll: jest.fn(),
     findOne: jest.fn(),
+    findOneWithAllTranslations: jest.fn(),
     create: jest.fn(),
     delete: jest.fn(),
     update: jest.fn(),
@@ -126,9 +136,9 @@ describe("MonstersController", () => {
 
       mockService.create.mockResolvedValue({ data: mockMonster });
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto, mockUser);
 
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto, mockUser.userId);
       expect(result).toEqual({ data: mockMonster });
     });
   });
@@ -138,12 +148,12 @@ describe("MonstersController", () => {
   // -------------------------------------------------------------
   describe("delete", () => {
     it("should delete a monster when no SRD translations", async () => {
-      mockService.findOne.mockResolvedValue({ data: mockMonster });
+      mockService.findOneWithAllTranslations.mockResolvedValue(mockMonster);
       mockService.delete.mockResolvedValue({ data: { ...mockMonster, deletedAt: new Date() } });
 
-      const result = await controller.delete(id as any);
+      const result = await controller.delete(id as any, mockUser);
 
-      expect(service.findOne).toHaveBeenCalledWith(id, "en");
+      expect(service.findOneWithAllTranslations).toHaveBeenCalledWith(id);
       expect(service.delete).toHaveBeenCalledWith(id, mockMonster);
       expect(result.data.deletedAt).toBeDefined();
     });
@@ -153,12 +163,13 @@ describe("MonstersController", () => {
         _id: id,
         tag: 1,
         languages: ["en"],
+        createdBy: "user-123",
         translations: new Map([["en", { name: "Goblin", srd: true }]]),
       };
 
-      mockService.findOne.mockResolvedValue({ data: mockSRDMonster });
+      mockService.findOneWithAllTranslations.mockResolvedValue(mockSRDMonster);
 
-      await expect(controller.delete(id as any)).rejects.toThrow(
+      await expect(controller.delete(id as any, mockUser)).rejects.toThrow(
         "Cannot delete monster #" + id + ": it has at least one SRD translation",
       );
 
@@ -172,12 +183,12 @@ describe("MonstersController", () => {
   describe("update", () => {
     it("should update a monster when no SRD translations", async () => {
       const updateDto = { tag: 1 } as any;
-      mockService.findOne.mockResolvedValue({ data: mockMonster });
+      mockService.findOneWithAllTranslations.mockResolvedValue(mockMonster);
       mockService.update.mockResolvedValue({ data: { ...mockMonster, tag: 1 } });
 
-      const result = await controller.update(id as any, updateDto);
+      const result = await controller.update(id as any, updateDto, mockUser);
 
-      expect(service.findOne).toHaveBeenCalledWith(id, "en");
+      expect(service.findOneWithAllTranslations).toHaveBeenCalledWith(id);
       expect(service.update).toHaveBeenCalledWith(id, mockMonster, updateDto);
       expect(result.data.tag).toBe(1);
     });
@@ -187,6 +198,7 @@ describe("MonstersController", () => {
         _id: id,
         tag: 0,
         languages: ["en", "fr"],
+        createdBy: "user-123",
         translations: new Map([
           ["en", { name: "Goblin", srd: true }],
           ["fr", { name: "Gobelin", srd: false }],
@@ -194,9 +206,9 @@ describe("MonstersController", () => {
       };
 
       const updateDto = { tag: 1 } as any;
-      mockService.findOne.mockResolvedValue({ data: mockSRDMonster });
+      mockService.findOneWithAllTranslations.mockResolvedValue(mockSRDMonster);
 
-      await expect(controller.update(id as any, updateDto)).rejects.toThrow(
+      await expect(controller.update(id as any, updateDto, mockUser)).rejects.toThrow(
         "Cannot update monster #" + id + ": it has at least one SRD translation",
       );
 
