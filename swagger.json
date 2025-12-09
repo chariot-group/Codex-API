@@ -1507,6 +1507,200 @@
         "tags": [
           "Monsters"
         ]
+      },
+      "patch": {
+        "operationId": "MonstersController_updateTranslation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the monster",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "The ISO 2-letter language code in lowercase",
+            "schema": {
+              "example": "fr",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMonsterTranslationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Translation updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Monster"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid language code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cannot modify SRD translation or official monster translation without admin rights",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Monster or translation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Monster or translation has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a specific translation for a monster",
+        "tags": [
+          "Monsters"
+        ]
+      },
+      "delete": {
+        "operationId": "MonstersController_deleteTranslation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the monster",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "The ISO 2 letter code of the language to delete",
+            "schema": {
+              "example": "fr",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Translation deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/IResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/DeleteTranslationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid monster ID or language code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cannot delete SRD translation or last active translation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Monster or translation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Monster or translation has been deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a specific translation of a monster",
+        "tags": [
+          "Monsters"
+        ]
       }
     }
   },
@@ -1546,12 +1740,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-09T07:09:28.429Z"
+            "example": "2025-12-09T10:30:58.203Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-09T07:09:28.429Z"
+            "example": "2025-12-09T10:30:58.203Z"
           },
           "name": {
             "type": "string",
@@ -1719,22 +1913,22 @@
       "DeleteTranslationResponseDto": {
         "type": "object",
         "properties": {
-          "message": {
+          "monsterId": {
             "type": "string",
-            "example": "Translation 'fr' for spell #507f1f77bcf86cd799439011 deleted in 15ms",
-            "description": "Success message"
+            "description": "The ID of the monster",
+            "example": "507f1f77bcf86cd799439011"
           },
-          "deletedLanguage": {
+          "deletedLang": {
             "type": "string",
-            "example": "fr",
-            "description": "The language code of the deleted translation"
+            "description": "The language code that was deleted",
+            "example": "fr"
           },
           "remainingLanguages": {
+            "description": "Remaining languages after deletion",
             "example": [
               "en",
               "es"
             ],
-            "description": "Remaining active languages after deletion",
             "type": "array",
             "items": {
               "type": "string"
@@ -1742,8 +1936,8 @@
           }
         },
         "required": [
-          "message",
-          "deletedLanguage",
+          "monsterId",
+          "deletedLang",
           "remainingLanguages"
         ]
       },
@@ -1768,13 +1962,13 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-09T07:09:28.653Z",
+            "example": "2025-12-09T10:30:58.321Z",
             "description": "Creation date of this translation"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-09T07:09:28.653Z",
+            "example": "2025-12-09T10:30:58.321Z",
             "description": "Last update date of this translation"
           }
         },
@@ -2604,12 +2798,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-09T07:09:29.257Z"
+            "example": "2025-12-09T10:30:58.794Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-09T07:09:29.257Z"
+            "example": "2025-12-09T10:30:58.794Z"
           },
           "name": {
             "type": "string",
@@ -2692,6 +2886,163 @@
           "deletedAt"
         ]
       },
+      "StatsTranslationDto": {
+        "type": "object",
+        "properties": {
+          "languages": {
+            "description": "Langues parlées par le monstre traduites",
+            "example": [
+              "Commun",
+              "Draconique"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AbilityTranslationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nom de la capacité traduit",
+            "example": "Vision dans le noir"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description de la capacité traduite",
+            "example": "Le monstre peut voir dans l'obscurité jusqu'à 60 pieds."
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ]
+      },
+      "ActionTranslationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nom de l'action traduit",
+            "example": "Attaque multiattaque"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description de l'action traduite",
+            "example": "Le dragon effectue trois attaques : une morsure et deux griffes."
+          }
+        }
+      },
+      "ActionsTranslationDto": {
+        "type": "object",
+        "properties": {
+          "standard": {
+            "description": "Actions standard traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionTranslationDto"
+            }
+          },
+          "legendary": {
+            "description": "Actions légendaires traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionTranslationDto"
+            }
+          },
+          "lair": {
+            "description": "Actions d'antre traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionTranslationDto"
+            }
+          },
+          "reactions": {
+            "description": "Réactions traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionTranslationDto"
+            }
+          },
+          "bonus": {
+            "description": "Actions bonus traduites",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionTranslationDto"
+            }
+          }
+        }
+      },
+      "ProfileTranslationDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Type du monstre traduit",
+            "example": "Dragon"
+          },
+          "subtype": {
+            "type": "string",
+            "description": "Sous-type du monstre traduit",
+            "example": "Rouge"
+          },
+          "alignment": {
+            "type": "string",
+            "description": "Alignement du monstre traduit",
+            "example": "Chaotique mauvais"
+          }
+        }
+      },
+      "UpdateMonsterTranslationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Gobelin",
+            "description": "Name of the monster (translated)"
+          },
+          "stats": {
+            "description": "Translation for stats (only languages can be modified)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsTranslationDto"
+              }
+            ]
+          },
+          "abilities": {
+            "description": "Translated abilities (name and description only)",
+            "example": [
+              {
+                "name": "Ascendance féerique",
+                "description": "La créature a l'avantage aux jets de sauvegarde contre les effets de charme."
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AbilityTranslationDto"
+            }
+          },
+          "actions": {
+            "description": "Translated actions (name and description only, numeric values cannot be changed)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActionsTranslationDto"
+              }
+            ]
+          },
+          "profile": {
+            "description": "Translated profile (type, subtype, alignment)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfileTranslationDto"
+              }
+            ]
+          }
+        }
+      },
       "MonsterTranslationSummaryDto": {
         "type": "object",
         "properties": {
@@ -2719,13 +3070,13 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-09T07:09:29.370Z",
+            "example": "2025-12-09T10:30:58.878Z",
             "description": "Creation date of this translation"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "example": "2025-12-09T07:09:29.370Z",
+            "example": "2025-12-09T10:30:58.878Z",
             "description": "Last update date of this translation"
           }
         },
@@ -3541,116 +3892,6 @@
         "required": [
           "tag"
         ]
-      },
-      "StatsTranslationDto": {
-        "type": "object",
-        "properties": {
-          "languages": {
-            "description": "Langues parlées par le monstre traduites",
-            "example": [
-              "Commun",
-              "Draconique"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "AbilityTranslationDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Nom de la capacité traduit",
-            "example": "Vision dans le noir"
-          },
-          "description": {
-            "type": "string",
-            "description": "Description de la capacité traduite",
-            "example": "Le monstre peut voir dans l'obscurité jusqu'à 60 pieds."
-          }
-        },
-        "required": [
-          "name",
-          "description"
-        ]
-      },
-      "ActionTranslationDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Nom de l'action traduit",
-            "example": "Attaque multiattaque"
-          },
-          "description": {
-            "type": "string",
-            "description": "Description de l'action traduite",
-            "example": "Le dragon effectue trois attaques : une morsure et deux griffes."
-          }
-        }
-      },
-      "ActionsTranslationDto": {
-        "type": "object",
-        "properties": {
-          "standard": {
-            "description": "Actions standard traduites",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ActionTranslationDto"
-            }
-          },
-          "legendary": {
-            "description": "Actions légendaires traduites",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ActionTranslationDto"
-            }
-          },
-          "lair": {
-            "description": "Actions d'antre traduites",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ActionTranslationDto"
-            }
-          },
-          "reactions": {
-            "description": "Réactions traduites",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ActionTranslationDto"
-            }
-          },
-          "bonus": {
-            "description": "Actions bonus traduites",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ActionTranslationDto"
-            }
-          }
-        }
-      },
-      "ProfileTranslationDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "description": "Type du monstre traduit",
-            "example": "Dragon"
-          },
-          "subtype": {
-            "type": "string",
-            "description": "Sous-type du monstre traduit",
-            "example": "Rouge"
-          },
-          "alignment": {
-            "type": "string",
-            "description": "Alignement du monstre traduit",
-            "example": "Chaotique mauvais"
-          }
-        }
       },
       "CreateMonsterTranslationDto": {
         "type": "object",

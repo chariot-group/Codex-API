@@ -99,7 +99,7 @@ export class SpellsService {
       const totalItems = await this.spellModel.countDocuments(filters);
 
       const start = Date.now();
-      let spells: Spell[] = await this.spellModel
+      const spells: Spell[] = await this.spellModel
         .find(filters)
         .select(projection)
         .skip(skip)
@@ -129,7 +129,7 @@ export class SpellsService {
 
   async findOne(id: Types.ObjectId, lang: string): Promise<IResponse<Spell>> {
     try {
-      let projection: any = {
+      const projection: any = {
         tag: 1,
         languages: 1,
         translations: 1,
