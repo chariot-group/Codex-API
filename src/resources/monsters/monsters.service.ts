@@ -817,59 +817,19 @@ export class MonstersService {
         throw new ForbiddenException(message);
       }
 
-      // Validate spells if spellcasting is being updated
-      if (updateData.spellcasting && updateData.spellcasting.length > 0) {
-        const spellIds: Types.ObjectId[] = [];
-        for (const spellcasting of updateData.spellcasting) {
-          if (spellcasting.spells && spellcasting.spells.length > 0) {
-            for (const spellId of spellcasting.spells) {
-              if (Types.ObjectId.isValid(spellId)) {
-                spellIds.push(new Types.ObjectId(spellId));
-              }
-            }
-          }
-        }
-        if (spellIds.length > 0) {
-          this.logger.log(`Validating ${spellIds.length} spell(s) for translation update`);
-          await this.validateSpells(spellIds);
-        }
-      }
-
-      // Build update object for MongoDB
+      // Build update object for MongoDB using the mapper
+      // This ensures only textual fields can be modified (same rules as create translation)
+      // Note: spellcasting, affinities, challenge, and other numeric fields cannot be modified
+      const translationUpdateFields = this.mapper.updateTranslationEntity(updateData, translation);
       const updateFields: Record<string, any> = {};
       const now = new Date();
 
       // Always update the updatedAt timestamp
       updateFields[`translations.${lang}.updatedAt`] = now;
 
-      // Map update data fields to MongoDB update paths
-      if (updateData.name !== undefined) {
-        updateFields[`translations.${lang}.name`] = updateData.name;
-      }
-      if (updateData.stats !== undefined) {
-        updateFields[`translations.${lang}.stats`] = this.mapper.dtoStatsToEntity(updateData.stats);
-      }
-      if (updateData.affinities !== undefined) {
-        updateFields[`translations.${lang}.affinities`] = this.mapper.dtoAffinitiesToEntity(updateData.affinities);
-      }
-      if (updateData.abilities !== undefined) {
-        updateFields[`translations.${lang}.abilities`] = updateData.abilities.map((ability) =>
-          this.mapper.dtoAbilityToEntity(ability),
-        );
-      }
-      if (updateData.spellcasting !== undefined) {
-        updateFields[`translations.${lang}.spellcasting`] = updateData.spellcasting.map((spellcasting) =>
-          this.mapper.dtoSpellcastingToEntity(spellcasting),
-        );
-      }
-      if (updateData.actions !== undefined) {
-        updateFields[`translations.${lang}.actions`] = this.mapper.dtoActionsToEntity(updateData.actions);
-      }
-      if (updateData.challenge !== undefined) {
-        updateFields[`translations.${lang}.challenge`] = this.mapper.dtoChallengeToEntity(updateData.challenge);
-      }
-      if (updateData.profile !== undefined) {
-        updateFields[`translations.${lang}.profile`] = this.mapper.dtoProfileToEntity(updateData.profile);
+      // Map the translation fields to MongoDB paths
+      for (const [field, value] of Object.entries(translationUpdateFields)) {
+        updateFields[`translations.${lang}.${field}`] = value;
       }
 
       const start: number = Date.now();
