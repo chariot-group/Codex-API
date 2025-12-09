@@ -6,6 +6,7 @@ import { Types } from "mongoose";
 import { PaginationSpell } from "./dtos/find-all.dto";
 import { CreateSpellDto } from "./dtos/create-spell.dto";
 import { UpdateSpellDto } from "./dtos/update-spell.dto";
+import { JwtPayload } from "@/auth/current-user.decorator";
 
 describe("SpellsController", () => {
   let controller: SpellsController;
@@ -13,9 +14,17 @@ describe("SpellsController", () => {
 
   const id = new Types.ObjectId();
 
+  const mockUser: JwtPayload = {
+    userId: "user-123",
+    username: "testuser",
+    email: "test@example.com",
+    roles: [],
+  };
+
   const mockSpell = {
     _id: id,
     name: "Fireball",
+    createdBy: "user-123",
     translations: new Map([
       ["en", { name: "Fireball", srd: false }],
       ["fr", { name: "Boule de feu", srd: false }],
@@ -25,12 +34,14 @@ describe("SpellsController", () => {
   const mockSpellSRD = {
     _id: id,
     name: "Fireball",
+    createdBy: "user-123",
     translations: new Map([["en", { name: "Fireball", srd: true }]]),
   };
 
   const mockService = {
     findAll: jest.fn(),
     findOne: jest.fn(),
+    findOneWithAllTranslations: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
@@ -100,9 +111,9 @@ describe("SpellsController", () => {
 
       mockService.create.mockResolvedValue({ data: mockSpell });
 
-      const res = await controller.create(dto);
+      const res = await controller.create(dto, mockUser);
 
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto, mockUser.userId);
       expect(res).toEqual({ data: mockSpell });
     });
   });
@@ -112,21 +123,21 @@ describe("SpellsController", () => {
   // -------------------------------------------------------------
   describe("update", () => {
     it("should update a spell when translations are not SRD", async () => {
-      mockService.findOne = jest.fn().mockResolvedValue({ data: mockSpell });
+      mockService.findOneWithAllTranslations = jest.fn().mockResolvedValue(mockSpell);
       mockService.update.mockResolvedValue({ data: mockSpell });
 
       const updateDto: UpdateSpellDto = { tag: 4 } as any;
 
-      const result = await controller.update(id as any, updateDto);
+      const result = await controller.update(id as any, updateDto, mockUser);
 
       expect(service.update).toHaveBeenCalled();
       expect(result).toEqual({ data: mockSpell });
     });
 
     it("should throw ForbiddenException if spell is SRD", async () => {
-      mockService.findOne = jest.fn().mockResolvedValue({ data: mockSpellSRD });
+      mockService.findOneWithAllTranslations = jest.fn().mockResolvedValue(mockSpellSRD);
 
-      await expect(controller.update(id as any, mockSpellSRD as any)).rejects.toThrow(ForbiddenException);
+      await expect(controller.update(id as any, mockSpellSRD as any, mockUser)).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -135,20 +146,20 @@ describe("SpellsController", () => {
   // -------------------------------------------------------------
   describe("delete", () => {
     it("should delete a spell when no SRD translation exists", async () => {
-      mockService.findOne = jest.fn().mockResolvedValue({ data: mockSpell });
+      mockService.findOneWithAllTranslations = jest.fn().mockResolvedValue(mockSpell);
       mockService.delete.mockResolvedValue({ data: mockSpell });
 
-      const result = await controller.delete(id as any);
+      const result = await controller.delete(id as any, mockUser);
 
       expect(service.delete).toHaveBeenCalledWith(id, mockSpell);
       expect(result).toEqual({ data: mockSpell });
     });
 
     it("should throw ForbiddenException if spell has an SRD translation", async () => {
-      mockService.findOne = jest.fn().mockResolvedValue({ data: mockSpellSRD });
+      mockService.findOneWithAllTranslations = jest.fn().mockResolvedValue(mockSpellSRD);
 
-      await expect(controller.delete(id as any)).rejects.toThrow(ForbiddenException);
-      await expect(controller.delete(id as any)).rejects.toThrow(
+      await expect(controller.delete(id as any, mockUser)).rejects.toThrow(ForbiddenException);
+      await expect(controller.delete(id as any, mockUser)).rejects.toThrow(
         `Cannot delete spell #${id}: it has at least one SRD translation`,
       );
     });
@@ -157,15 +168,16 @@ describe("SpellsController", () => {
       const mixedSpell = {
         _id: id,
         name: "Fireball",
+        createdBy: "user-123",
         translations: new Map([
           ["en", { name: "Fireball", srd: true }],
           ["fr", { name: "Boule de feu", srd: false }],
         ]),
       };
 
-      mockService.findOne = jest.fn().mockResolvedValue({ data: mixedSpell });
+      mockService.findOneWithAllTranslations = jest.fn().mockResolvedValue(mixedSpell);
 
-      await expect(controller.delete(id as any)).rejects.toThrow(ForbiddenException);
+      await expect(controller.delete(id as any, mockUser)).rejects.toThrow(ForbiddenException);
     });
   });
 });
