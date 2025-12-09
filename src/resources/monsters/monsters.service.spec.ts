@@ -1772,89 +1772,9 @@ describe("MonstersService - updateTranslation", () => {
     errSpy.mockRestore();
   });
 
-  it("should validate spells when spellcasting is updated", async () => {
-    const spellId = new Types.ObjectId();
-    const updateDtoWithSpells = {
-      spellcasting: [
-        {
-          ability: "Intelligence",
-          saveDC: 14,
-          spells: [spellId.toString()],
-        },
-      ],
-    };
-
-    const updatedMonster = {
-      ...mockMonster,
-      translations: new Map([
-        [
-          "en",
-          {
-            srd: false,
-            name: "Goblin",
-            deletedAt: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            spellcasting: [
-              {
-                ability: "Intelligence",
-                saveDC: 14,
-                spells: [spellId],
-              },
-            ],
-          },
-        ],
-        [
-          "fr",
-          {
-            srd: false,
-            name: "Gobelin",
-            deletedAt: null,
-          },
-        ],
-      ]),
-    };
-
-    monsterModel.exec
-      .mockResolvedValueOnce(mockMonster)
-      .mockResolvedValueOnce({ acknowledged: true })
-      .mockResolvedValueOnce(updatedMonster);
-
-    spellModel.exec.mockResolvedValue([{ _id: spellId }]);
-
-    const logSpy = jest.spyOn(service["logger"], "log").mockImplementation(() => {});
-
-    const result = await service.updateTranslation(mockMonsterId, "en", updateDtoWithSpells as any, false);
-
-    expect(result.data).toBeDefined();
-    expect(spellModel.find).toHaveBeenCalled();
-
-    logSpy.mockRestore();
-  });
-
-  it("should throw NotFoundException for non-existent spell IDs", async () => {
-    const nonExistentSpellId = new Types.ObjectId();
-    const updateDtoWithInvalidSpells = {
-      spellcasting: [
-        {
-          ability: "Intelligence",
-          saveDC: 14,
-          spells: [nonExistentSpellId.toString()],
-        },
-      ],
-    };
-
-    monsterModel.exec.mockResolvedValueOnce(mockMonster);
-    spellModel.exec.mockResolvedValue([]);
-
-    const errSpy = jest.spyOn(service["logger"], "error").mockImplementation(() => {});
-
-    await expect(
-      service.updateTranslation(mockMonsterId, "en", updateDtoWithInvalidSpells as any, false),
-    ).rejects.toThrow(NotFoundException);
-
-    errSpy.mockRestore();
-  });
+  // Note: spellcasting, affinities, challenge, and other numeric fields
+  // are no longer modifiable via translation update - they can only be set
+  // during translation creation (copying from original)
 
   it("should handle internal errors gracefully", async () => {
     monsterModel.exec.mockRejectedValue(new Error("DB error"));
