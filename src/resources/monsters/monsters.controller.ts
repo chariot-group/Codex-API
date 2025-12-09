@@ -15,7 +15,15 @@ import {
   Query,
 } from "@nestjs/common";
 import { MonstersService } from "@/resources/monsters/monsters.service";
-import { ApiExtraModels, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiSecurity, getSchemaPath } from "@nestjs/swagger";
+import {
+  ApiExtraModels,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiSecurity,
+  getSchemaPath,
+} from "@nestjs/swagger";
 import { IPaginatedResponse, IResponse } from "@/common/dtos/reponse.dto";
 import { Monster } from "@/resources/monsters/schemas/monster.schema";
 import { MonsterContent } from "@/resources/monsters/schemas/monster-content.schema";
@@ -30,8 +38,10 @@ import { UpdateMonsterDto } from "@/resources/monsters/dtos/update-monster.dto";
 import { UpdateMonsterTranslationDto } from "@/resources/monsters/dtos/update-monster-translation.dto";
 import { DeleteTranslationResponseDto } from "@/resources/monsters/dtos/delete-translation.dto";
 import { MonsterTranslationSummaryDto, LangParamDto } from "@/resources/monsters/dtos/monster-translation.dto";
+import { Public } from "@/auth/public.decorator";
+import { CurrentUser, JwtPayload } from "@/auth/current-user.decorator";
 
-@ApiExtraModels(Monster, MonsterContent, IResponse, IPaginatedResponse)
+@ApiExtraModels(Monster, MonsterContent, IResponse, IPaginatedResponse, MonsterTranslationSummaryDto)
 @ApiSecurity("oauth2")
 @Controller("monsters")
 export class MonstersController {
@@ -55,7 +65,12 @@ export class MonstersController {
   }
 
   @Get()
-  @ApiOperation({ summary: "Get a collection of paginated monsters" })
+  @Public()
+  @ApiOperation({
+    summary: "Get a collection of paginated monsters",
+    description: "Public endpoint - No authentication required",
+    security: [],
+  })
   @ApiOkResponse({
     description: "Monsters found successfully",
     schema: {
@@ -76,6 +91,7 @@ export class MonstersController {
     return this.monstersService.findAll(query);
   }
   @Get(":id")
+  @Public()
   @ApiParam({
     name: "id",
     type: String,
@@ -89,7 +105,11 @@ export class MonstersController {
     description: "The ISO 2 code of translation",
     example: "en",
   })
-  @ApiOperation({ summary: "Get a monster by ID" })
+  @ApiOperation({
+    summary: "Get a monster by ID",
+    description: "Public endpoint - No authentication required",
+    security: [],
+  })
   @ApiOkResponse({
     description: "Monster found successfully",
     schema: {
@@ -119,6 +139,7 @@ export class MonstersController {
   }
 
   @Get(":id/translations")
+  @Public()
   @ApiParam({
     name: "id",
     type: String,
@@ -126,7 +147,11 @@ export class MonstersController {
     description: "The ID of the monster",
     example: "507f1f77bcf86cd799439011",
   })
-  @ApiOperation({ summary: "Get all available translations for a monster" })
+  @ApiOperation({
+    summary: "Get all available translations for a monster",
+    description: "Public endpoint - No authentication required",
+    security: [],
+  })
   @ApiOkResponse({
     description: "Translations list retrieved successfully",
     schema: {
@@ -158,6 +183,7 @@ export class MonstersController {
   }
 
   @Get(":id/translations/:lang")
+  @Public()
   @ApiParam({
     name: "id",
     type: String,
@@ -172,7 +198,11 @@ export class MonstersController {
     description: "ISO 2-letter language code (e.g., en, fr, es, de)",
     example: "fr",
   })
-  @ApiOperation({ summary: "Get a specific translation for a monster by language code" })
+  @ApiOperation({
+    summary: "Get a specific translation for a monster by language code",
+    description: "Public endpoint - No authentication required",
+    security: [],
+  })
   @ApiOkResponse({
     description: "Translation retrieved successfully",
     schema: {
@@ -227,8 +257,11 @@ export class MonstersController {
     description: "Validation DTO failed",
     type: ProblemDetailsDto,
   })
-  async create(@Body() CreateMonsterDto: CreateMonsterDto): Promise<IResponse<Monster>> {
-    return this.monstersService.create(CreateMonsterDto);
+  async create(
+    @Body() CreateMonsterDto: CreateMonsterDto,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<IResponse<Monster>> {
+    return this.monstersService.create(CreateMonsterDto, user?.userId);
   }
 
   @Delete(":id")
@@ -265,12 +298,20 @@ export class MonstersController {
     type: ProblemDetailsDto,
   })
   @ApiResponse({ status: 410, description: "Monster #ID has been deleted", type: ProblemDetailsDto })
-  async delete(@Param("id", ParseMongoIdPipe) id: Types.ObjectId): Promise<IResponse<Monster>> {
-    const monster: IResponse<Monster> = await this.validateResource(id, "en");
-    // Vérifier si au moins une traduction a srd: true
-    const hasSrdTranslation = Array.from(monster.data.translations.values()).some(
-      (translation) => translation.srd === true,
-    );
+  async delete(
+    @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<IResponse<Monster>> {
+    const monster = await this.monstersService.findOneWithAllTranslations(id);
+
+    if (monster.deletedAt) {
+      const message = `Monster #${id} has been deleted`;
+      this.logger.error(message);
+      throw new GoneException(message);
+    }
+
+    // Check if any translation is SRD - SRD resources cannot be deleted
+    const hasSrdTranslation = Array.from(monster.translations.values()).some((translation) => translation.srd === true);
 
     if (hasSrdTranslation) {
       const message = `Cannot delete monster #${id}: it has at least one SRD translation`;
@@ -278,7 +319,14 @@ export class MonstersController {
       throw new ForbiddenException(message);
     }
 
-    return this.monstersService.delete(id, monster.data);
+    // Check if user is the owner of the resource
+    if (monster.createdBy && monster.createdBy !== user?.userId) {
+      const message = `You are not allowed to delete monster #${id}: you are not the owner`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
+    }
+
+    return this.monstersService.delete(id, monster);
   }
 
   @Patch(":id")
@@ -318,10 +366,18 @@ export class MonstersController {
   async update(
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Body() updateData: UpdateMonsterDto,
+    @CurrentUser() user: JwtPayload,
   ): Promise<IResponse<Monster>> {
-    const oldMonster: IResponse<Monster> = await this.validateResource(id, "en");
+    const oldMonster = await this.monstersService.findOneWithAllTranslations(id);
 
-    const hasSrdTranslation = Array.from(oldMonster.data.translations.values()).some(
+    if (oldMonster.deletedAt) {
+      const message = `Monster #${id} has been deleted`;
+      this.logger.error(message);
+      throw new GoneException(message);
+    }
+
+    // Check if any translation is SRD - SRD resources cannot be modified
+    const hasSrdTranslation = Array.from(oldMonster.translations.values()).some(
       (translation) => translation.srd === true,
     );
 
@@ -331,7 +387,14 @@ export class MonstersController {
       throw new ForbiddenException(message);
     }
 
-    return this.monstersService.update(id, oldMonster.data, updateData);
+    // Check if user is the owner of the resource
+    if (oldMonster.createdBy && oldMonster.createdBy !== user?.userId) {
+      const message = `You are not allowed to modify monster #${id}: you are not the owner`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
+    }
+
+    return this.monstersService.update(id, oldMonster, updateData);
   }
 
   @Post(":id/translations/:lang")
@@ -394,7 +457,23 @@ export class MonstersController {
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Param("lang") lang: string,
     @Body() translationDto: CreateMonsterTranslationDto,
+    @CurrentUser() user: JwtPayload,
   ): Promise<IResponse<Monster>> {
+    // Check if user is the owner of the resource
+    const monster = await this.monstersService.findOneWithAllTranslations(id);
+
+    if (monster.deletedAt) {
+      const message = `Monster #${id} has been deleted`;
+      this.logger.error(message);
+      throw new GoneException(message);
+    }
+
+    if (monster.createdBy && monster.createdBy !== user?.userId) {
+      const message = `You are not allowed to add translations to monster #${id}: you are not the owner`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
+    }
+
     // TODO: Implement proper authentication/authorization with Guards
     // For now, we'll determine admin status based on some logic
     // In a real implementation, this would come from the JWT token or session
@@ -456,12 +535,36 @@ export class MonstersController {
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Param("lang") lang: string,
     @Body() updateData: UpdateMonsterTranslationDto,
+    @CurrentUser() user: JwtPayload,
   ): Promise<IResponse<Monster>> {
     // Validate language code format
     if (!/^[a-z]{2}$/.test(lang)) {
       const message = `Invalid language code '${lang}': must be a 2-letter ISO code in lowercase`;
       this.logger.error(message);
       throw new BadRequestException(message);
+    }
+
+    // Check if user is the owner of the resource
+    const monster = await this.monstersService.findOneWithAllTranslations(id);
+
+    if (monster.deletedAt) {
+      const message = `Monster #${id} has been deleted`;
+      this.logger.error(message);
+      throw new GoneException(message);
+    }
+
+    // Check if the translation is SRD - SRD translations cannot be modified
+    const translation = monster.translations.get(lang);
+    if (translation?.srd) {
+      const message = `Cannot modify SRD translation '${lang}' for monster #${id}`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
+    }
+
+    if (monster.createdBy && monster.createdBy !== user?.userId) {
+      const message = `You are not allowed to modify translations for monster #${id}: you are not the owner`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
     }
 
     // TODO: Implement authentication/authorization to determine if user is admin
@@ -523,12 +626,28 @@ export class MonstersController {
   async deleteTranslation(
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Param("lang") lang: string,
+    @CurrentUser() user: JwtPayload,
   ): Promise<IResponse<DeleteTranslationResponseDto>> {
     // Validate language format
     if (!/^[a-z]{2}$/.test(lang)) {
       const message = `Invalid language code '${lang}': must be a 2-letter ISO code in lowercase (e.g., fr, en, es)`;
       this.logger.error(message);
       throw new BadRequestException(message);
+    }
+
+    // Check if user is the owner of the resource
+    const monster = await this.monstersService.findOneWithAllTranslations(id);
+
+    if (monster.deletedAt) {
+      const message = `Monster #${id} has been deleted`;
+      this.logger.error(message);
+      throw new GoneException(message);
+    }
+
+    if (monster.createdBy && monster.createdBy !== user?.userId) {
+      const message = `You are not allowed to delete translations for monster #${id}: you are not the owner`;
+      this.logger.error(message);
+      throw new ForbiddenException(message);
     }
 
     return this.monstersService.deleteTranslation(id, lang);

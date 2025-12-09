@@ -27,4 +27,12 @@ export class MetaDataSchema {
     },
   })
   languages: string[];
+
+  /**
+   * User ID who created this resource (from SSO)
+   * @type string
+   */
+  @ApiProperty({ example: "550e8400-e29b-41d4-a716-446655440000", required: false })
+  @Prop({ required: false, default: null })
+  createdBy?: string;
 }
