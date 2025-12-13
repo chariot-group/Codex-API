@@ -1,16 +1,4 @@
 services:
-  traefik:
-    image: traefik:v2.10
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik.yml:/traefik.yml:ro
-      - ./acme.json:/acme.json
-    networks:
-      - web
   mongo:
     image: mongo:8.2.2
     container_name: mongodb
@@ -31,7 +19,7 @@ services:
       timeout: 5s
       retries: 5
   backend:
-    image: ghcr.io/chariot-group/codex-api:latest
+    image: ghcr.io/chariot-group/codex-api-backend:latest
     container_name: backend
     restart: unless-stopped
     working_dir: /app
@@ -51,11 +39,11 @@ services:
       - "traefik.http.routers.app.tls.certresolver=letsencrypt"
       - "traefik.http.services.app.loadbalancer.server.port=${API_PORT}"
     networks:
-      - web
+      - traefik-public
 
 volumes:
   mongodb_data:
 
 networks:
-  web:
-    driver: bridge
+  traefik-public:
+    external: true
