@@ -18,13 +18,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - internal
+
   backend:
     image: ghcr.io/chariot-group/codex-api-backend:latest
     container_name: backend
     restart: unless-stopped
     working_dir: /app
-    ports:
-      - "${API_PORT}:9000"
     environment:
       - API_PORT=${API_PORT}
       - MONGO_URL=${MONGO_URL}
@@ -34,16 +35,19 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`${API_DOMAIN}`)"
-      - "traefik.http.routers.app.entrypoints=websecure"
-      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
-      - "traefik.http.services.app.loadbalancer.server.port=${API_PORT}"
+      - "traefik.http.routers.codex-api.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.codex-api.entrypoints=websecure"
+      - "traefik.http.routers.codex-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.codex-api.loadbalancer.server.port=9000"
     networks:
       - traefik-public
+      - internal
 
 volumes:
   mongodb_data:
 
 networks:
+  internal:
+    driver: bridge
   traefik-public:
     external: true
