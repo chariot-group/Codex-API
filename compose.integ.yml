@@ -22,7 +22,7 @@ services:
       - internal
 
   backend:
-    image: ghcr.io/chariot-group/codex-api-production:latest
+    image: ghcr.io/chariot-group/codex-api-integration:latest
     container_name: backend
     restart: unless-stopped
     working_dir: /app
