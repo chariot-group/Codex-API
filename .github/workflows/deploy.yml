@@ -4,13 +4,14 @@ on:
   push:
     branches:
       - integ
+      - main
 
 permissions:
   contents: read
   packages: write
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/codex-api-backend
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/codex-api-integration
 
 jobs:
   build-and-push:
@@ -18,6 +19,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set IMAGE_NAME based on branch
+        run: |
+          OWNER="${GITHUB_REPOSITORY%/*}"
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            echo "IMAGE_NAME=ghcr.io/${OWNER}/codex-api-production" >> $GITHUB_ENV
+          else
+            echo "IMAGE_NAME=ghcr.io/${OWNER}/codex-api-integration" >> $GITHUB_ENV
+          fi
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
