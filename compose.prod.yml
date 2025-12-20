@@ -1,7 +1,7 @@
 services:
   mongo:
     image: mongo:8.2.2
-    container_name: mongodb
+    container_name: mongodb-prod
     ports:
       - "27017"
     volumes:
@@ -10,9 +10,6 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
       - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
-    command:
-      - "--logpath"
-      - "/var/log/mongodb/mongod.log"
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
       interval: 10s
@@ -23,7 +20,7 @@ services:
 
   backend:
     image: ghcr.io/chariot-group/codex-api-production:latest
-    container_name: backend
+    container_name: backend-prod
     restart: unless-stopped
     working_dir: /app
     environment:
