@@ -40,10 +40,10 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.codex-api.rule=Host(`${API_DOMAIN}`)"
-      - "traefik.http.routers.codex-api.entrypoints=websecure"
-      - "traefik.http.routers.codex-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.codex-api.loadbalancer.server.port=9000"
+      - "traefik.http.routers.codex-api-integ.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.codex-api-integ.entrypoints=websecure"
+      - "traefik.http.routers.codex-api-integ.tls.certresolver=letsencrypt"
+      - "traefik.http.services.codex-api-integ.loadbalancer.server.port=9000"
       - "traefik.docker.network=traefik-public"
     networks:
       - traefik-public

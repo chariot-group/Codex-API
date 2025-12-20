@@ -37,10 +37,10 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.codex-api.rule=Host(`${API_DOMAIN}`)"
-      - "traefik.http.routers.codex-api.entrypoints=websecure"
-      - "traefik.http.routers.codex-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.codex-api.loadbalancer.server.port=9000"
+      - "traefik.http.routers.codex-api-prod.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.codex-api-prod.entrypoints=websecure"
+      - "traefik.http.routers.codex-api-prod.tls.certresolver=letsencrypt"
+      - "traefik.http.services.codex-api-prod.loadbalancer.server.port=9000"
       - "traefik.docker.network=traefik-public"
     networks:
       - traefik-public
