@@ -12,8 +12,17 @@ export class MonsterTranslationSummaryDto {
   @ApiProperty({ example: true, description: "Whether this is SRD content" })
   srd: boolean;
 
-  @ApiProperty({ example: "Goblin", description: "Monster name in this language" })
-  name: string;
+  @ApiProperty({ example: 'Aragorn' })
+    @IsString()
+    firstname: string;
+  
+    @ApiProperty({ example: 'Elessar' })
+    @IsString()
+    lastname?: string;
+  
+    @ApiProperty({ example: 'Fils d\'Arathorn' })
+    @IsString()
+    surname?: string;
 
   @ApiProperty({ example: null, description: "Deletion date if archived" })
   deletedAt?: Date;

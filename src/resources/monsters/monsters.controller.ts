@@ -29,17 +29,16 @@ import { Monster } from "@/resources/monsters/schemas/monster.schema";
 import { MonsterContent } from "@/resources/monsters/schemas/monster-content.schema";
 import { PaginationMonster } from "@/resources/monsters/dtos/find-all.dto";
 import { CreateMonsterDto } from "@/resources/monsters/dtos/create-monster.dto";
-import { CreateMonsterTranslationDto } from "@/resources/monsters/dtos/create-monster-translation.dto";
 import { ParseMongoIdPipe } from "@/common/pipes/parse-mong-id.pipe";
 import { Types } from "mongoose";
 import { langParam } from "@/resources/monsters/dtos/find-one.dto";
 import { ProblemDetailsDto } from "@/common/dtos/errors.dto";
 import { UpdateMonsterDto } from "@/resources/monsters/dtos/update-monster.dto";
-import { UpdateMonsterTranslationDto } from "@/resources/monsters/dtos/update-monster-translation.dto";
 import { DeleteTranslationResponseDto } from "@/resources/monsters/dtos/delete-translation.dto";
 import { MonsterTranslationSummaryDto, LangParamDto } from "@/resources/monsters/dtos/monster-translation.dto";
 import { Public } from "@/auth/public.decorator";
 import { CurrentUser, JwtPayload } from "@/auth/current-user.decorator";
+import { MonsterTranslationDto } from "./dtos/content/monsterTranslation.dto";
 
 @ApiExtraModels(Monster, MonsterContent, IResponse, IPaginatedResponse, MonsterTranslationSummaryDto)
 @ApiSecurity("oauth2")
@@ -456,7 +455,7 @@ export class MonstersController {
   async addTranslation(
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Param("lang") lang: string,
-    @Body() translationDto: CreateMonsterTranslationDto,
+    @Body() translationDto: MonsterTranslationDto,
     @CurrentUser() user: JwtPayload,
   ): Promise<IResponse<Monster>> {
     // Check if user is the owner of the resource
@@ -534,7 +533,7 @@ export class MonstersController {
   async updateTranslation(
     @Param("id", ParseMongoIdPipe) id: Types.ObjectId,
     @Param("lang") lang: string,
-    @Body() updateData: UpdateMonsterTranslationDto,
+    @Body() updateData: MonsterTranslationDto,
     @CurrentUser() user: JwtPayload,
   ): Promise<IResponse<Monster>> {
     // Validate language code format

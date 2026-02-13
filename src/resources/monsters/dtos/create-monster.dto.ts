@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsString, Matches, ValidateNested } from "class-validator";
-import { CreateMonsterContentDto } from "@/resources/monsters/dtos/create-monster-content.dto";
+import { MonsterDto } from "./content/monster.dto";
 
 export class CreateMonsterDto {
   @ApiProperty({ example: "en" })
@@ -13,6 +13,6 @@ export class CreateMonsterDto {
 
   @ApiProperty()
   @ValidateNested()
-  @Type(() => CreateMonsterContentDto)
-  monsterContent: CreateMonsterContentDto;
+  @Type(() => MonsterDto)
+  monsterContent: MonsterDto;
 }

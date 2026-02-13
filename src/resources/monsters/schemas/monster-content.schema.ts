@@ -7,6 +7,10 @@ import { Stats } from "@/resources/monsters/schemas/stats/stats.schema";
 import { Actions } from "@/resources/monsters/schemas/actions/actions.schema";
 import { Challenge } from "@/resources/monsters/schemas/challenge/challenge.schema";
 import { Profile } from "@/resources/monsters/schemas/profile/profile.schema";
+import { Appearance } from "@/resources/monsters/schemas/appearance/appearance.schema";
+import { Background } from "./background/background.schema";
+import { Treasure } from "./treasure/treasure.schema";
+import { Conditions } from "./conditions/conditions.schema";
 
 @Schema()
 export class MonsterContent {
@@ -26,9 +30,21 @@ export class MonsterContent {
   @Prop({ default: new Date() })
   updatedAt?: Date;
 
-  @ApiProperty({ example: "Goblin" })
+  @ApiProperty({ example: 'Aragorn' })
   @Prop({ required: true })
-  name: string;
+  firstname: string;
+
+  @ApiProperty({ example: 'Elessar' })
+  @Prop({ required: false })
+  lastname: string;
+
+  @ApiProperty({ example: 'Fils d\'Arathorn' })
+  @Prop({ required: false })
+  surname: string;
+
+  @ApiProperty({ example: 'http://example.com/avatar.png' })
+  @Prop({ required: false })
+  avatar: string;
 
   @ApiProperty({ type: () => Stats })
   @Prop({ type: Stats, default: {} })
@@ -46,6 +62,22 @@ export class MonsterContent {
   @Prop({ type: [Spellcasting], default: [] })
   spellcasting: Spellcasting[];
 
+  @ApiProperty({ type: Appearance })
+  @Prop({ type: Appearance, default: {} })
+  appearance: Appearance;
+
+  @ApiProperty({ type: Background })
+  @Prop({ type: Background, default: {} })
+  background: Background;
+
+  @ApiProperty({ type: Treasure })
+  @Prop({ type: Treasure, default: {} })
+  treasure: Treasure;
+
+  @ApiProperty({ type: Conditions })
+  @Prop({ type: Conditions, default: {} })
+  conditions: Conditions;
+
   @ApiProperty({ type: () => Actions })
   @Prop({ type: Actions, default: {} })
   actions: Actions;
@@ -57,6 +89,10 @@ export class MonsterContent {
   @ApiProperty({ type: () => Profile, required: false })
   @Prop({ type: Profile, default: {} })
   profile?: Profile;
+
+  @ApiProperty({ example: '18d8+54', required: false })
+  @Prop({ required: false })
+  hitPointsRoll?: string;
 }
 
 export const MonsterContentSchema = SchemaFactory.createForClass(MonsterContent);

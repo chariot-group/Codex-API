@@ -21,10 +21,9 @@ import { IResponse } from "@/common/dtos/reponse.dto";
 import { SpellFormattedDto } from "@/common/dtos/spell-formatted.dto";
 import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
 import { UpdateMonsterDto } from "@/resources/monsters/dtos/update-monster.dto";
-import { UpdateMonsterTranslationDto } from "@/resources/monsters/dtos/update-monster-translation.dto";
-import { CreateMonsterTranslationDto } from "@/resources/monsters/dtos/create-monster-translation.dto";
 import { DeleteTranslationResponseDto } from "@/resources/monsters/dtos/delete-translation.dto";
 import { MonsterTranslationSummaryDto } from "@/resources/monsters/dtos/monster-translation.dto";
+import { MonsterTranslationDto } from "./dtos/content/monsterTranslation.dto";
 
 @Injectable()
 export class MonstersService {
@@ -254,8 +253,12 @@ export class MonstersService {
 
         // Si on recherche aussi par langue
         if (lang.length > 0) {
-          // Vérifie le nom dans la langue voule
-          filters[`translations.${lang}.name`] = { $regex: decodedName, $options: "i" };
+          // Vérifie le nom ou le prenom ou le surnom dans la langue voulue
+          filters.$or = [
+            { [`translations.${lang}.firstname`]: { $regex: decodedName, $options: "i" } },
+            { [`translations.${lang}.lastname`]: { $regex: decodedName, $options: "i" } },
+            { [`translations.${lang}.surname`]: { $regex: decodedName, $options: "i" } },
+          ];
           // Affiche seulement la langue voulue
           projection = {
             ...projection,
@@ -264,9 +267,11 @@ export class MonstersService {
         } else {
           // On cherche dans tous les langues
           const languages = await this.monsterModel.distinct("languages");
-          filters["$or"] = languages.map((language) => ({
-            [`translations.${language}.name`]: { $regex: decodedName, $options: "i" },
-          }));
+          filters["$or"] = languages.flatMap((language) => [
+            { [`translations.${language}.firstname`]: { $regex: decodedName, $options: "i" } },
+            { [`translations.${language}.lastname`]: { $regex: decodedName, $options: "i" } },
+            { [`translations.${language}.surname`]: { $regex: decodedName, $options: "i" } },
+          ]);
 
           // On affiche toutes les langues
           projection = {
@@ -319,9 +324,12 @@ export class MonstersService {
           for (const language of monster.languages) {
             const translation: MonsterContent = monster.translations.get(language);
 
-            // Si le nom renseigné dans cette langue match
-            if (translation && translation.name && translation.name.toLowerCase().includes(decodedName.toLowerCase())) {
-              filteredTranslations.set(language, translation);
+            if (translation) {
+              // Si le nom renseigné dans cette langue match
+              let name: string = translation.firstname + " " + translation.lastname + " " + translation.surname;
+              if (name.toLowerCase().includes(decodedName.toLowerCase())) {
+                filteredTranslations.set(language, translation);
+              }
             }
           }
 
@@ -486,7 +494,9 @@ export class MonstersService {
           translationSummaries.push({
             lang,
             srd: translation.srd,
-            name: translation.name,
+            firstname: translation.firstname,
+            lastname: translation.lastname,
+            surname: translation.surname,
             deletedAt: translation.deletedAt,
             createdAt: translation.createdAt,
             updatedAt: translation.updatedAt,
@@ -673,7 +683,7 @@ export class MonstersService {
   async addTranslation(
     id: Types.ObjectId,
     lang: string,
-    translationDto: CreateMonsterTranslationDto,
+    translationDto: MonsterTranslationDto,
     isAdmin: boolean = false,
   ): Promise<IResponse<Monster>> {
     try {
@@ -802,7 +812,7 @@ export class MonstersService {
   async updateTranslation(
     id: Types.ObjectId,
     lang: string,
-    updateData: UpdateMonsterTranslationDto,
+    updateData: MonsterTranslationDto,
     isAdmin: boolean = false,
   ): Promise<IResponse<Monster>> {
     try {

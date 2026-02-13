@@ -1,25 +1,21 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Action } from "@/resources/monsters/schemas/actions/sub/action.schema";
+import { ApiProperty } from "@nestjs/swagger";
 
 @Schema({ _id: false })
 export class Actions {
+  
+  @ApiProperty({ type: [Action] })
   @Prop({ type: [Action], default: [] })
   standard: Action[];
 
+  @ApiProperty({ type: [Action] })
   @Prop({ type: [Action], default: [] })
   legendary: Action[];
 
-  @Prop()
-  legendaryActionsPerDay?: number;
-
+  @ApiProperty({ type: [Action] })
   @Prop({ type: [Action], default: [] })
   lair: Action[];
-
-  @Prop({ type: [Action], default: [] })
-  reactions: Action[];
-
-  @Prop({ type: [Action], default: [] })
-  bonus: Action[];
 }
 
 export const ActionsSchema = SchemaFactory.createForClass(Actions);
