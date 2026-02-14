@@ -18,8 +18,8 @@ import { Profile } from "@/resources/monsters/schemas/profile/profile.schema";
 import { Action } from "@/resources/monsters/schemas/actions/sub/action.schema";
 import { Damage } from "@/resources/monsters/schemas/actions/sub/damage.schema";
 import { Actions } from "@/resources/monsters/schemas/actions/actions.schema";
-import { Save } from "@/resources/monsters/schemas/actions/sub/save.schema";
-import { Usage } from "@/resources/monsters/schemas/actions/sub/usage.schema";
+import { AbilityScores } from "@/resources/monsters/schemas/stats/sub/abilityScores.schema";
+import { DifficultyClass } from "@/resources/monsters/schemas/actions/sub/dificultyClass.schema";
 @Injectable()
 export class ConverterService {
   readonly SERVICE_NAME = this.constructor.name;
@@ -143,7 +143,10 @@ export class ConverterService {
     monstercontent.srd = true;
     monstercontent.createdAt = new Date();
     monstercontent.updatedAt = new Date();
-    monstercontent.name = entry.name;
+    monstercontent.firstname = entry.name;
+    monstercontent.lastname = "";
+    monstercontent.surname = "";
+    monstercontent.avatar = `https://www.dnd5eapi.co${entry.image}`;
 
     monstercontent.stats = this.convertStats(entry);
     const tempAffinities = new Affinities();
@@ -151,7 +154,6 @@ export class ConverterService {
       resistances: entry.damage_resistances ?? [],
       immunities: entry.damage_immunities ?? [],
       vulnerabilities: entry.damage_vulnerabilities ?? [],
-      conditionImmunities: (entry.condition_immunities ?? []).map((condition: any) => condition.name),
     });
 
     monstercontent.affinities = tempAffinities;
@@ -247,6 +249,17 @@ export class ConverterService {
     return Object.assign(new Skills(), result);
   }
 
+  private mapAbilityScores(entry) {
+    const abilityScores = new AbilityScores();
+    abilityScores.strength = entry.strength ?? 10;
+    abilityScores.dexterity = entry.dexterity ?? 10;
+    abilityScores.constitution = entry.constitution ?? 10;
+    abilityScores.intelligence = entry.intelligence ?? 10;
+    abilityScores.wisdom = entry.wisdom ?? 10;
+    abilityScores.charisma = entry.charisma ?? 10;
+    return abilityScores;
+  }
+
   private mapSenses(entry): Sense[] {
     if (!entry.senses) return [];
     const senses: Sense[] = [];
@@ -278,32 +291,12 @@ export class ConverterService {
   private convertStats(entry: any): Stats {
     let stats = new Stats();
 
-    switch (entry.size) {
-      case "Tiny":
-        stats.size = 0;
-        break;
-      case "Small":
-        stats.size = 1;
-        break;
-      case "Medium":
-        stats.size = 2;
-        break;
-      case "Large":
-        stats.size = 3;
-        break;
-      case "Huge":
-        stats.size = 4;
-        break;
-      case "Gargantuan":
-        stats.size = 5;
-        break;
-      default:
-        stats.size = 2;
-    }
+    stats.size = entry.size;
 
     stats.maxHitPoints = entry.hit_points ?? 0;
     stats.currentHitPoints = entry.hit_points ?? 0;
     stats.tempHitPoints = 0;
+    stats.initiative = Math.floor((entry.dexterity - 10) / 2);
     stats.armorClass = entry.armor_class.value ?? 0;
     stats.passivePerception = entry.senses?.passive_perception ?? 0;
 
@@ -313,6 +306,8 @@ export class ConverterService {
       entry.languages.split(", ").map((lang: string) => lang.charAt(0).toUpperCase() + lang.slice(1).toLowerCase()) ??
       [];
 
+    //TODO: ability scores
+    stats.abilityScores = this.mapAbilityScores(entry);
     stats.savingThrows = this.mapSavingThrows(entry);
     stats.skills = this.mapSkills(entry);
     stats.senses = this.mapSenses(entry);
@@ -329,6 +324,7 @@ export class ConverterService {
 
     return [
       {
+        className: "",
         ability: spellcasting.spellcasting.ability?.name,
         saveDC: spellcasting.spellcasting.dc,
         attackBonus: spellcasting.spellcasting.modifier,
@@ -395,40 +391,33 @@ export class ConverterService {
     }
 
     // Gestion des dégâts
-    action.damage = this.mapDamage(sourceAction.damage?.[0]);
+    action.damage = this.mapDamage(sourceAction.damage);
 
     // Gestion du jet de sauvegarde
     if (sourceAction.dc) {
-      const save = new Save();
-      save.type = sourceAction.dc.dc_type.name.toLowerCase();
-      save.dc = sourceAction.dc.dc_value;
-      save.successType = sourceAction.dc.success_type;
-      action.save = save;
-    }
-
-    // Gestion des conditions d'utilisation
-    if (sourceAction.usage) {
-      const usage = new Usage();
-      usage.type = sourceAction.usage.type;
-      usage.times = sourceAction.usage.times;
-      usage.dice = sourceAction.usage.dice;
-      usage.minValue = sourceAction.usage.min_value;
-      action.usage = usage;
+      const dc = new DifficultyClass();
+      dc.dcType = sourceAction.dc.dc_type.name.toLowerCase();
+      dc.dcValue = sourceAction.dc.dc_value;
+      dc.successType = sourceAction.dc.success_type;
+      action.dc = dc;
     }
 
     return action;
   }
 
-  private mapDamage(sourceDamage: any): Damage {
+  private mapDamage(sourceDamage: any): Damage[] {
     if (!sourceDamage) {
-      return new Damage();
+      return [];
     }
 
-    const damage = new Damage();
-    damage.dice = sourceDamage.damage_dice;
-    damage.type = sourceDamage.damage_type?.name?.toLowerCase();
+    sourceDamage = Array.isArray(sourceDamage) ? sourceDamage : [sourceDamage];
 
-    return damage;
+    return sourceDamage.map((damage: any) => {
+      const mappedDamage = new Damage();
+      mappedDamage.dice = damage.damage_dice;
+      mappedDamage.type = damage.damage_type?.name?.toLowerCase();
+      return mappedDamage;
+    });
   }
 
   private mapActions(entry: any): Actions {
@@ -452,28 +441,15 @@ export class ConverterService {
       const costMatch = legendaryAction.name.match(/\(Costs (\d+) Actions?\)/i);
       if (costMatch) {
         action.name = legendaryAction.name.replace(/\(Costs \d+ Actions?\)/i, "").trim();
-        action.legendaryActionCost = parseInt(costMatch[1], 10);
+        action.cost = parseInt(costMatch[1], 10);
       } else {
-        action.legendaryActionCost = 1; // Par défaut, une action légendaire coûte 1 point
+        action.cost = 1; // Par défaut, une action légendaire coûte 1 point
       }
 
       return action;
     });
 
-    // Définition du nombre d'actions légendaires par jour
-    // La plupart des monstres ont 3 actions légendaires par tour, sauf indication contraire
-    actions.legendaryActionsPerDay = entry.legendary_actions ? 3 : 0;
-
-    // Conversion des réactions
-    actions.reactions = (entry.reactions || []).map((reaction) => {
-      const action = this.mapAction(reaction);
-      action.type = "reaction";
-      return action;
-    });
-
-    // Les actions de repaire et bonus ne sont pas présentes dans la source
     actions.lair = [];
-    actions.bonus = [];
 
     return actions;
   }
