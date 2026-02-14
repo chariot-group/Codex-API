@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsArray, IsOptional, IsString, ValidateNested } from "class-validator";
-import { SenseTranslationDto } from "./sens/sensTranslation.dto";
+import { SenseTranslationDto } from "@/resources/monsters/dtos/content/stats/sens/sensTranslation.dto";
 
 export class StatsTranslationDto {
 

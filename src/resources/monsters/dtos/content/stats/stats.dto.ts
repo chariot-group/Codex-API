@@ -2,11 +2,11 @@ import { Size, SIZES } from "@/resources/monsters/constants/sizes.constant";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
-import { AbilityScoresDto } from "./abilityScores/abilityScores.dto";
-import { SavingThrowsDto } from "./savingThrows/savingThrows.dto";
-import { SpeedDto } from "./speed/speed.dto";
-import { SkillsDto } from "./skills/skills.dto";
-import { SenseDto } from "./sens/sens.dto";
+import { AbilityScoresDto } from "@/resources/monsters/dtos/content/stats/abilityScores/abilityScores.dto";
+import { SavingThrowsDto } from "@/resources/monsters/dtos/content/stats/savingThrows/savingThrows.dto";
+import { SpeedDto } from "@/resources/monsters/dtos/content/stats/speed/speed.dto";
+import { SkillsDto } from "@/resources/monsters/dtos/content/stats/skills/skills.dto";
+import { SenseDto } from "@/resources/monsters/dtos/content/stats/sens/sens.dto";
 
 export class StatsDto {
 

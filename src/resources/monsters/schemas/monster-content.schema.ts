@@ -8,9 +8,9 @@ import { Actions } from "@/resources/monsters/schemas/actions/actions.schema";
 import { Challenge } from "@/resources/monsters/schemas/challenge/challenge.schema";
 import { Profile } from "@/resources/monsters/schemas/profile/profile.schema";
 import { Appearance } from "@/resources/monsters/schemas/appearance/appearance.schema";
-import { Background } from "./background/background.schema";
-import { Treasure } from "./treasure/treasure.schema";
-import { Conditions } from "./conditions/conditions.schema";
+import { Background } from "@/resources/monsters/schemas/background/background.schema";
+import { Treasure } from "@/resources/monsters/schemas/treasure/treasure.schema";
+import { Conditions } from "@/resources/monsters/schemas/conditions/conditions.schema";
 
 @Schema()
 export class MonsterContent {

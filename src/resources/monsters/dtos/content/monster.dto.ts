@@ -1,17 +1,17 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsArray, IsOptional, IsString, ValidateNested } from "class-validator";
-import { StatsDto } from "./stats/stats.dto";
-import { AffinitiesDto } from "./affinities/affinities.dto";
-import { AbilityDto } from "./ability/ability.dto";
-import { SpellcastingDto } from "./spellCasting/spellCasting.dto";
-import { ActionsDto } from "./actions/actions.dto";
-import { ProfileDto } from "./profile/profil.dto";
-import { AppearanceDto } from "./appearance/appearance.dto";
-import { BackgroundDto } from "./background/background.dto";
-import { TreasureDto } from "./treasure/treasure.dto";
-import { ConditionsDto } from "./conditions/conditions.dto";
-import { ChallengeDto } from "./challenge/challenge.dto";
+import { StatsDto } from "@/resources/monsters/dtos/content/stats/stats.dto";
+import { AffinitiesDto } from "@/resources/monsters/dtos/content/affinities/affinities.dto";
+import { AbilityDto } from "@/resources/monsters/dtos/content/ability/ability.dto";
+import { SpellcastingDto } from "@/resources/monsters/dtos/content/spellCasting/spellCasting.dto";
+import { ActionsDto } from "@/resources/monsters/dtos/content/actions/actions.dto";
+import { ProfileDto } from "@/resources/monsters/dtos/content/profile/profil.dto";
+import { AppearanceDto } from "@/resources/monsters/dtos/content/appearance/appearance.dto";
+import { BackgroundDto } from "@/resources/monsters/dtos/content/background/background.dto";
+import { TreasureDto } from "@/resources/monsters/dtos/content/treasure/treasure.dto";
+import { ConditionsDto } from "@/resources/monsters/dtos/content/conditions/conditions.dto";
+import { ChallengeDto } from "@/resources/monsters/dtos/content/challenge/challenge.dto";
 
 export class MonsterDto {
   

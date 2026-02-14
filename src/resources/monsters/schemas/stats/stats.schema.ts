@@ -6,7 +6,7 @@ import { SavingThrows } from "@/resources/monsters/schemas/stats/sub/savingThrow
 import { Skills } from "@/resources/monsters/schemas/stats/sub/skill.schema";
 import { Sense } from "@/resources/monsters/schemas/stats/sub/sense";
 import { ApiExtraModels, ApiProperty } from "@nestjs/swagger";
-import { Size, SIZES } from "../../constants/sizes.constant";
+import { Size, SIZES } from "@/resources/monsters/constants/sizes.constant";
 
 @ApiExtraModels(Speed, AbilityScores, SavingThrows, Skills, Sense)
 @Schema({ _id: false })

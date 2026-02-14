@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsArray, IsOptional, ValidateNested } from "class-validator";
-import { ActionDto } from "./action/action.dto";
+import { ActionDto } from "@/resources/monsters/dtos/content/actions/action/action.dto";
 
 export class ActionsDto {
   @ApiProperty({

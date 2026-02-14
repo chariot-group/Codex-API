@@ -35,10 +35,10 @@ import { langParam } from "@/resources/monsters/dtos/find-one.dto";
 import { ProblemDetailsDto } from "@/common/dtos/errors.dto";
 import { UpdateMonsterDto } from "@/resources/monsters/dtos/update-monster.dto";
 import { DeleteTranslationResponseDto } from "@/resources/monsters/dtos/delete-translation.dto";
-import { MonsterTranslationSummaryDto, LangParamDto } from "@/resources/monsters/dtos/monster-translation.dto";
+import { MonsterTranslationSummaryDto } from "@/resources/monsters/dtos/monster-translation.dto";
 import { Public } from "@/auth/public.decorator";
 import { CurrentUser, JwtPayload } from "@/auth/current-user.decorator";
-import { MonsterTranslationDto } from "./dtos/content/monsterTranslation.dto";
+import { MonsterTranslationDto } from "@/resources/monsters/dtos/content/monsterTranslation.dto";
 
 @ApiExtraModels(Monster, MonsterContent, IResponse, IPaginatedResponse, MonsterTranslationSummaryDto)
 @ApiSecurity("oauth2")

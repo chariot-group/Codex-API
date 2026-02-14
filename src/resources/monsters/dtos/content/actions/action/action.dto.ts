@@ -7,8 +7,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { DamageDto } from './damage.dto';
-import { DifficultyClassDto } from './dificultyClass.dto';
+import { DamageDto } from '@/resources/monsters/dtos/content/actions/action/damage.dto';
+import { DifficultyClassDto } from '@/resources/monsters/dtos/content/actions/action/dificultyClass.dto';
 
 export class ActionDto {
 

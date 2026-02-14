@@ -1,15 +1,15 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsArray, IsOptional, IsString, ValidateNested } from "class-validator";
-import { StatsTranslationDto } from "./stats/statsTranslation.dto";
-import { AffinitiesTranslationDto } from "./affinities/affinitiesTranslation.dto";
-import { AbilityTranslationDto } from "./ability/abilityTranslation.dto";
-import { SpellcastingTranslationDto } from "./spellCasting/spellCastingTranslation.dto";
-import { ActionsTranslationDto } from "./actions/actionsTranslation.dto";
-import { ProfileTranslationDto } from "./profile/profilTranslation.dto";
-import { AppearanceTranslationDto } from "./appearance/appearanceTranslation.dto";
-import { BackgroundTranslationDto } from "./background/backgroundTranslation.dto";
-import { TreasureTranslationDto } from "./treasure/treasureTranslation.dto";
+import { StatsTranslationDto } from "@/resources/monsters/dtos/content/stats/statsTranslation.dto";
+import { AffinitiesTranslationDto } from "@/resources/monsters/dtos/content/affinities/affinitiesTranslation.dto";
+import { AbilityTranslationDto } from "@/resources/monsters/dtos/content/ability/abilityTranslation.dto";
+import { SpellcastingTranslationDto } from "@/resources/monsters/dtos/content/spellCasting/spellCastingTranslation.dto";
+import { ActionsTranslationDto } from "@/resources/monsters/dtos/content/actions/actionsTranslation.dto";
+import { ProfileTranslationDto } from "@/resources/monsters/dtos/content/profile/profilTranslation.dto";
+import { AppearanceTranslationDto } from "@/resources/monsters/dtos/content/appearance/appearanceTranslation.dto";
+import { BackgroundTranslationDto } from "@/resources/monsters/dtos/content/background/backgroundTranslation.dto";
+import { TreasureTranslationDto } from "@/resources/monsters/dtos/content/treasure/treasureTranslation.dto";
 
 export class MonsterTranslationDto {
   

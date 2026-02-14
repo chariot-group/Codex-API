@@ -23,7 +23,7 @@ import { SpellContent } from "@/resources/spells/schemas/spell-content.schema";
 import { UpdateMonsterDto } from "@/resources/monsters/dtos/update-monster.dto";
 import { DeleteTranslationResponseDto } from "@/resources/monsters/dtos/delete-translation.dto";
 import { MonsterTranslationSummaryDto } from "@/resources/monsters/dtos/monster-translation.dto";
-import { MonsterTranslationDto } from "./dtos/content/monsterTranslation.dto";
+import { MonsterTranslationDto } from "@/resources/monsters/dtos/content/monsterTranslation.dto";
 
 @Injectable()
 export class MonstersService {

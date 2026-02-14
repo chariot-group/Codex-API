@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { ApiProperty } from "@nestjs/swagger";
-import { ALIGNMENT, Alignment } from "../../constants/alignment.constant";
+import { ALIGNMENT, Alignment } from "@/resources/monsters/constants/alignment.constant";
 
 @Schema({ _id: false })
 export class Profile {

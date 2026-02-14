@@ -2,7 +2,7 @@ import { Prop } from "@nestjs/mongoose";
 import { Damage } from "@/resources/monsters/schemas/actions/sub/damage.schema";
 import { Schema } from "@nestjs/mongoose";
 import { ApiProperty } from "@nestjs/swagger";
-import { DifficultyClass } from "./dificultyClass.schema";
+import { DifficultyClass } from "@/resources/monsters/schemas/actions/sub/dificultyClass.schema";
 
 /**
  * Le suppressReservedKeysWarning permet d'éviter les warnings de Mongoose
