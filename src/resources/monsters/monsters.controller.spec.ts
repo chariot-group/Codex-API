@@ -1,10 +1,10 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { MonstersController } from "./monsters.controller";
-import { MonstersService } from "./monsters.service";
+import { MonstersController } from "@/resources/monsters/monsters.controller";
+import { MonstersService } from "@/resources/monsters/monsters.service";
 import { BadRequestException } from "@nestjs/common";
 import { Types } from "mongoose";
-import { PaginationMonster } from "./dtos/find-all.dto";
-import { CreateMonsterDto } from "./dtos/create-monster.dto";
+import { PaginationMonster } from "@/resources/monsters/dtos/find-all.dto";
+import { CreateMonsterDto } from "@/resources/monsters/dtos/create-monster.dto";
 import { JwtPayload } from "@/auth/current-user.decorator";
 
 describe("MonstersController", () => {

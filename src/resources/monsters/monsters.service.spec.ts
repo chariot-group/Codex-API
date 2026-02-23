@@ -1,8 +1,8 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { MonstersService } from "./monsters.service";
+import { MonstersService } from "@/resources/monsters/monsters.service";
 import { getModelToken } from "@nestjs/mongoose";
-import { Monster } from "./schemas/monster.schema";
-import { Spell } from "../spells/schemas/spell.schema";
+import { Monster } from "@/resources/monsters/schemas/monster.schema";
+import { Spell } from "@/resources/spells/schemas/spell.schema";
 import {
   InternalServerErrorException,
   NotFoundException,
@@ -33,7 +33,7 @@ describe("MonstersService - create", () => {
     _id: new Types.ObjectId(),
     tag: 1,
     languages: ["en"],
-    translations: new Map([["en", { name: "Goblin" }]]),
+    translations: new Map([["en", { firstname: "Goblin", lastname: "", surname: "" }]]),
   };
 
   beforeEach(async () => {
@@ -219,8 +219,8 @@ describe("MonstersService - findAll", () => {
     tag: 2,
     languages: ["en", "fr"],
     translations: new Map([
-      ["en", { name: "Goblin" }],
-      ["fr", { name: "Gobelin" }],
+      ["en", { firstname: "Goblin", lastname: "", surname: "" }],
+      ["fr", { firstname: "Gobelin", lastname: "", surname: "" }],
     ]),
     deletedAt: null,
   };
@@ -295,9 +295,9 @@ describe("MonstersService - findAll", () => {
       tag: 3,
       languages: ["en", "fr", "es"],
       translations: new Map([
-        ["en", { name: "Dragon" }],
-        ["fr", { name: "Gobelin" }],
-        ["es", { name: "Dragon" }],
+        ["en", { firstname: "Dragon", lastname: "", surname: "" }],
+        ["fr", { firstname: "Gobelin", lastname: "", surname: "" }],
+        ["es", { firstname: "Dragon", lastname: "", surname: "" }],
       ]),
       deletedAt: null,
     };
@@ -373,8 +373,8 @@ describe("MonstersService - findOne", () => {
     tag: 2,
     languages: ["en", "fr"],
     translations: new Map([
-      ["en", { name: "Goblin" }],
-      ["fr", { name: "Gobelin" }],
+      ["en", { firstname: "Goblin", lastname: "", surname: "" }],
+      ["fr", { firstname: "Gobelin", lastname: "", surname: "" }],
     ]),
     deletedAt: null,
   };
@@ -450,7 +450,7 @@ describe("MonstersService - delete", () => {
     _id: id,
     tag: 0,
     languages: ["en"],
-    translations: new Map([["en", { name: "Goblin", srd: false }]]),
+    translations: new Map([["en", { firstname: "Goblin", lastname: "", surname: "", srd: false }]]),
     deletedAt: null,
   };
 
@@ -521,7 +521,7 @@ describe("MonstersService - update", () => {
     _id: id,
     tag: 0,
     languages: ["en"],
-    translations: new Map([["en", { name: "Goblin", srd: false }]]),
+    translations: new Map([["en", { firstname: "Goblin", lastname: "", surname: "", srd: false }]]),
   };
 
   beforeEach(async () => {
@@ -709,7 +709,7 @@ describe("MonstersService - extractSpellIds", () => {
 
   it("should return empty array for monster without spells", () => {
     const monster = {
-      translations: new Map([["en", { name: "Goblin" }]]),
+      translations: new Map([["en", { firstname: "Goblin", lastname: "", surname: "" }]]),
     } as any;
 
     const result = (service as any).extractSpellIds(monster);
@@ -818,7 +818,7 @@ describe("MonstersService - populateSpells", () => {
 
   it("should return monster unchanged if no spells", async () => {
     const monster = {
-      translations: new Map([["en", { name: "Goblin" }]]),
+      translations: new Map([["en", { firstname: "Goblin", lastname: "", surname: "" }]]),
     };
 
     const result = await (service as any).populateSpells(monster, "en");
@@ -964,8 +964,8 @@ describe("MonstersService - getTranslations", () => {
       languages: ["en", "fr"],
       deletedAt: null,
       translations: new Map([
-        ["en", { srd: true, name: "Goblin", deletedAt: null, createdAt: new Date(), updatedAt: new Date() }],
-        ["fr", { srd: false, name: "Gobelin", deletedAt: null, createdAt: new Date(), updatedAt: new Date() }],
+        ["en", { srd: true, firstname: "Goblin", lastname: "", surname: "", deletedAt: null, createdAt: new Date(), updatedAt: new Date() }],
+        ["fr", { srd: false, firstname: "Gobelin", lastname: "", surname: "", deletedAt: null, createdAt: new Date(), updatedAt: new Date() }],
       ]),
     };
 
@@ -977,9 +977,9 @@ describe("MonstersService - getTranslations", () => {
 
     expect(result.data).toHaveLength(2);
     expect(result.data[0].lang).toBe("en");
-    expect(result.data[0].name).toBe("Goblin");
+    expect(result.data[0].firstname).toBe("Goblin");
     expect(result.data[1].lang).toBe("fr");
-    expect(result.data[1].name).toBe("Gobelin");
+    expect(result.data[1].firstname).toBe("Gobelin");
 
     logSpy.mockRestore();
   });
@@ -999,7 +999,7 @@ describe("MonstersService - getTranslations", () => {
       _id: mockMonsterId,
       languages: ["en"],
       deletedAt: new Date(),
-      translations: new Map([["en", { name: "Goblin" }]]),
+      translations: new Map([["en", { firstname: "Goblin", lastname: "", surname: "" }]]),
     };
 
     monsterModel.exec.mockResolvedValue(mockMonster);
@@ -1017,8 +1017,8 @@ describe("MonstersService - getTranslations", () => {
       languages: ["en", "fr"],
       deletedAt: null,
       translations: new Map([
-        ["en", { srd: true, name: "Goblin", deletedAt: null }],
-        ["fr", { srd: false, name: "Gobelin", deletedAt: new Date() }],
+        ["en", { srd: true, firstname: "Goblin", lastname: "", surname: "", deletedAt: null }],
+        ["fr", { srd: false, firstname: "Gobelin", lastname: "", surname: "", deletedAt: new Date() }],
       ]),
     };
 
@@ -1072,8 +1072,8 @@ describe("MonstersService - getTranslation", () => {
       languages: ["en", "fr"],
       deletedAt: null,
       translations: new Map([
-        ["en", { srd: true, name: "Goblin", deletedAt: null }],
-        ["fr", { srd: false, name: "Gobelin", deletedAt: null }],
+        ["en", { srd: true, firstname: "Goblin", lastname: "", surname: "", deletedAt: null }],
+        ["fr", { srd: false, firstname: "Gobelin", lastname: "", surname: "", deletedAt: null }],
       ]),
     };
 
@@ -1084,7 +1084,7 @@ describe("MonstersService - getTranslation", () => {
 
     const result = await service.getTranslation(mockMonsterId, "fr");
 
-    expect(result.data.name).toBe("Gobelin");
+    expect(result.data.firstname).toBe("Gobelin");
     expect(result.data.srd).toBe(false);
 
     logSpy.mockRestore();
@@ -1105,7 +1105,7 @@ describe("MonstersService - getTranslation", () => {
       _id: mockMonsterId,
       languages: ["en"],
       deletedAt: new Date(),
-      translations: new Map([["en", { name: "Goblin" }]]),
+      translations: new Map([["en", { firstname: "Goblin", lastname: "", surname: "" }]]),
     };
 
     monsterModel.exec.mockResolvedValue(mockMonster);
@@ -1122,7 +1122,7 @@ describe("MonstersService - getTranslation", () => {
       _id: mockMonsterId,
       languages: ["en"],
       deletedAt: null,
-      translations: new Map([["en", { name: "Goblin", deletedAt: null }]]),
+      translations: new Map([["en", { firstname: "Goblin", lastname: "", surname: "", deletedAt: null }]]),
     };
 
     monsterModel.exec.mockResolvedValue(mockMonster);
@@ -1140,8 +1140,8 @@ describe("MonstersService - getTranslation", () => {
       languages: ["en", "fr"],
       deletedAt: null,
       translations: new Map([
-        ["en", { name: "Goblin", deletedAt: null }],
-        ["fr", { name: "Gobelin", deletedAt: new Date() }],
+        ["en", { firstname: "Goblin", lastname: "", surname: "", deletedAt: null }],
+        ["fr", { firstname: "Gobelin", lastname: "", surname: "", deletedAt: new Date() }],
       ]),
     };
 
@@ -1165,7 +1165,9 @@ describe("MonstersService - getTranslation", () => {
         [
           "en",
           {
-            name: "Wizard Goblin",
+            firstname: "Wizard",
+            lastname: "Goblin",
+            surname: "",
             deletedAt: null,
             spellcasting: [
               {
@@ -1216,7 +1218,9 @@ describe("MonstersService - addTranslation", () => {
 
   // Mock original content with all numeric values
   const mockOriginalContent = {
-    name: "Goblin",
+    firstname: "Goblin",
+    lastname: "",
+    surname: "",
     srd: false,
     stats: {
       size: 1,
@@ -1255,7 +1259,9 @@ describe("MonstersService - addTranslation", () => {
 
   // New DTO format - only text/translatable fields
   const mockTranslationDto = {
-    name: "Gobelin",
+    firstname: "Gobelin",
+    lastname: "",
+    surname: "",
     stats: {
       languages: ["Commun", "Gobelin"],
     },
@@ -1362,7 +1368,7 @@ describe("MonstersService - addTranslation", () => {
         ...mockMonster,
         translations: new Map([
           ["en", mockOriginalContent],
-          ["fr", { ...mockOriginalContent, name: "Gobelin" }],
+          ["fr", { ...mockOriginalContent, firstname: "Gobelin" }],
         ]),
       }),
     });
@@ -1418,7 +1424,7 @@ describe("MonstersService - addTranslation", () => {
   });
 
   it("should copy SRD status from original content", async () => {
-    const srdOriginalContent = { ...mockOriginalContent, srd: true };
+    const srdOriginalContent = { ...mockOriginalContent, srd: true, firstname: "Goblin", lastname: "", surname: "" };
     monsterModel.findById = jest.fn().mockReturnValue({
       exec: jest.fn().mockResolvedValue({
         ...mockMonster,
@@ -1496,7 +1502,9 @@ describe("MonstersService - updateTranslation", () => {
         "en",
         {
           srd: false,
-          name: "Goblin",
+          firstname: "Goblin",
+          lastname: "",
+          surname: "",
           deletedAt: null,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -1506,7 +1514,9 @@ describe("MonstersService - updateTranslation", () => {
         "fr",
         {
           srd: false,
-          name: "Gobelin",
+          firstname: "Gobelin",
+          lastname: "",
+          surname: "",
           deletedAt: null,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -1516,7 +1526,11 @@ describe("MonstersService - updateTranslation", () => {
   };
 
   const mockUpdateDto = {
-    name: "Updated Goblin Name",
+    firstname: "Updated Goblin",
+    lastname: "Name",
+    appearance: {} as any,
+    background: {} as any,
+    treasure: {} as any,
   };
 
   beforeEach(async () => {
@@ -1551,7 +1565,9 @@ describe("MonstersService - updateTranslation", () => {
           "en",
           {
             srd: false,
-            name: "Updated Goblin Name",
+            firstname: "Updated Goblin",
+            lastname: "Name",
+            surname: "",
             deletedAt: null,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -1722,7 +1738,9 @@ describe("MonstersService - updateTranslation", () => {
           "en",
           {
             srd: true,
-            name: "Updated Goblin Name",
+            firstname: "Updated Goblin",
+            lastname: "Name",
+            surname: "",
             deletedAt: null,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -1822,8 +1840,8 @@ describe("MonstersService - deleteTranslation", () => {
       tag: 0,
       languages: ["en", "fr"],
       translations: new Map([
-        ["en", { name: "Goblin", srd: false, deletedAt: null }],
-        ["fr", { name: "Gobelin", srd: false, deletedAt: null }],
+        ["en", { firstname: "Goblin", lastname: "", surname: "", srd: false, deletedAt: null }],
+        ["fr", { firstname: "Gobelin", lastname: "", surname: "", srd: false, deletedAt: null }],
       ]),
       deletedAt: null,
     };
@@ -1864,8 +1882,8 @@ describe("MonstersService - deleteTranslation", () => {
       tag: 0,
       languages: ["en", "fr"],
       translations: new Map([
-        ["en", { name: "Goblin", srd: false }],
-        ["fr", { name: "Gobelin", srd: false }],
+        ["en", { firstname: "Goblin", lastname: "", surname: "", srd: false }],
+        ["fr", { firstname: "Gobelin", lastname: "", surname: "", srd: false }],
       ]),
       deletedAt: new Date(),
     };
@@ -1886,7 +1904,7 @@ describe("MonstersService - deleteTranslation", () => {
       _id: id,
       tag: 0,
       languages: ["en"],
-      translations: new Map([["en", { name: "Goblin", srd: false }]]),
+      translations: new Map([["en", { firstname: "Goblin", lastname: "", surname: "", srd: false }]]),
       deletedAt: null,
     };
 
@@ -1907,8 +1925,8 @@ describe("MonstersService - deleteTranslation", () => {
       tag: 0,
       languages: ["en"],
       translations: new Map([
-        ["en", { name: "Goblin", srd: false, deletedAt: null }],
-        ["fr", { name: "Gobelin", srd: false, deletedAt: new Date() }],
+        ["en", { firstname: "Goblin", lastname: "", surname: "", srd: false, deletedAt: null }],
+        ["fr", { firstname: "Gobelin", lastname: "", surname: "", srd: false, deletedAt: new Date() }],
       ]),
       deletedAt: null,
     };
@@ -1930,8 +1948,8 @@ describe("MonstersService - deleteTranslation", () => {
       tag: 1,
       languages: ["en", "fr"],
       translations: new Map([
-        ["en", { name: "Goblin", srd: true, deletedAt: null }],
-        ["fr", { name: "Gobelin", srd: false, deletedAt: null }],
+        ["en", { firstname: "Goblin", lastname: "", surname: "", srd: true, deletedAt: null }],
+        ["fr", { firstname: "Gobelin", lastname: "", surname: "", srd: false, deletedAt: null }],
       ]),
       deletedAt: null,
     };
@@ -1953,7 +1971,7 @@ describe("MonstersService - deleteTranslation", () => {
       _id: id,
       tag: 0,
       languages: ["en"],
-      translations: new Map([["en", { name: "Goblin", srd: false, deletedAt: null }]]),
+      translations: new Map([["en", { firstname: "Goblin", lastname: "", surname: "", srd: false, deletedAt: null }]]),
       deletedAt: null,
     };
 
@@ -1996,9 +2014,9 @@ describe("MonstersService - deleteTranslation", () => {
       tag: 0,
       languages: ["en", "fr", "es"],
       translations: new Map([
-        ["en", { name: "Goblin", srd: false, deletedAt: null }],
-        ["fr", { name: "Gobelin", srd: false, deletedAt: null }],
-        ["es", { name: "Goblin", srd: false, deletedAt: null }],
+        ["en", { firstname: "Goblin", lastname: "", surname: "", srd: false, deletedAt: null }],
+        ["fr", { firstname: "Gobelin", lastname: "", surname: "", srd: false, deletedAt: null }],
+        ["es", { firstname: "Goblin", lastname: "", surname: "", srd: false, deletedAt: null }],
       ]),
       deletedAt: null,
     };
