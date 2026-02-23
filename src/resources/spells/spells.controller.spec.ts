@@ -1,11 +1,11 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { SpellsController } from "./spells.controller";
-import { SpellsService } from "./spells.service";
+import { SpellsController } from "@/resources/spells/spells.controller";
+import { SpellsService } from "@/resources/spells/spells.service";
 import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import { Types } from "mongoose";
-import { PaginationSpell } from "./dtos/find-all.dto";
-import { CreateSpellDto } from "./dtos/create-spell.dto";
-import { UpdateSpellDto } from "./dtos/update-spell.dto";
+import { PaginationSpell } from "@/resources/spells/dtos/find-all.dto";
+import { CreateSpellDto } from "@/resources/spells/dtos/create-spell.dto";
+import { UpdateSpellDto } from "@/resources/spells/dtos/update-spell.dto";
 import { JwtPayload } from "@/auth/current-user.decorator";
 
 describe("SpellsController", () => {

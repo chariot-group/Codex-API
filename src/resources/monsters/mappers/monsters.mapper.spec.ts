@@ -1,6 +1,6 @@
-import { MonstersMapper } from "./monsters.mapper";
-import { CreateMonsterDto } from "../dtos/create-monster.dto";
-import { Monster } from "../schemas/monster.schema";
+import { MonstersMapper } from "@/resources/monsters/mappers/monsters.mapper";
+import { CreateMonsterDto } from "@/resources/monsters/dtos/create-monster.dto";
+import { Monster } from "@/resources/monsters/schemas/monster.schema";
 import { Types } from "mongoose";
 
 describe("MonstersMapper", () => {

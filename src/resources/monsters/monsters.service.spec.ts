@@ -1,8 +1,8 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { MonstersService } from "./monsters.service";
+import { MonstersService } from "@/resources/monsters/monsters.service";
 import { getModelToken } from "@nestjs/mongoose";
-import { Monster } from "./schemas/monster.schema";
-import { Spell } from "../spells/schemas/spell.schema";
+import { Monster } from "@/resources/monsters/schemas/monster.schema";
+import { Spell } from "@/resources/spells/schemas/spell.schema";
 import {
   InternalServerErrorException,
   NotFoundException,

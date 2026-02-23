@@ -2,9 +2,9 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { INestApplication } from "@nestjs/common";
 import * as request from "supertest";
 import { App } from "supertest/types";
-import { SpellsModule } from "../src/resources/spells/spells.module";
+import { SpellsModule } from "@/resources/spells/spells.module";
 import { getModelToken } from "@nestjs/mongoose";
-import { Spell } from "../src/resources/spells/schemas/spell.schema";
+import { Spell } from "@/resources/spells/schemas/spell.schema";
 import { Types } from "mongoose";
 
 describe("SpellsController - Translations (e2e)", () => {
