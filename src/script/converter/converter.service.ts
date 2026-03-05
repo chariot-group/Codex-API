@@ -147,6 +147,7 @@ export class ConverterService {
     monstercontent.lastname = "";
     monstercontent.surname = "";
     monstercontent.avatar = `https://www.dnd5eapi.co${entry.image}`;
+    monstercontent.hitPointsRoll = entry.hit_points_roll;
 
     monstercontent.stats = this.convertStats(entry);
     const tempAffinities = new Affinities();
