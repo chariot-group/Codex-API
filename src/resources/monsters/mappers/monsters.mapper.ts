@@ -1,33 +1,8 @@
 import { DtoMapper } from "@/common/mappers/common.mapper";
 import { Monster } from "@/resources/monsters/schemas/monster.schema";
 import { MonsterContent } from "@/resources/monsters/schemas/monster-content.schema";
-import { Types } from "mongoose";
+import { Condition, Types } from "mongoose";
 import { CreateMonsterDto } from "@/resources/monsters/dtos/create-monster.dto";
-import {
-  CreateMonsterContentDto,
-  CreateStatsDto,
-  CreateSpeedDto,
-  CreateAbilityScoresDto,
-  CreateSavingThrowsDto,
-  CreateSkillsDto,
-  CreateSenseDto,
-  CreateAffinitiesDto,
-  CreateAbilityDto,
-  CreateSpellcastingDto,
-  CreateActionsDto,
-  CreateActionDto,
-  CreateDamageDto,
-  CreateSaveDto,
-  CreateUsageDto,
-  CreateChallengeDto,
-  CreateProfileDto,
-} from "@/resources/monsters/dtos/create-monster-content.dto";
-import {
-  CreateMonsterTranslationDto,
-  AbilityTranslationDto,
-  ActionTranslationDto,
-} from "@/resources/monsters/dtos/create-monster-translation.dto";
-import { UpdateMonsterTranslationDto } from "@/resources/monsters/dtos/update-monster-translation.dto";
 import { Stats } from "@/resources/monsters/schemas/stats/stats.schema";
 import { Speed } from "@/resources/monsters/schemas/stats/sub/speed.schema";
 import { AbilityScores } from "@/resources/monsters/schemas/stats/sub/abilityScores.schema";
@@ -40,10 +15,37 @@ import { Spellcasting } from "@/resources/monsters/schemas/spellcasting/spellcas
 import { Actions } from "@/resources/monsters/schemas/actions/actions.schema";
 import { Action } from "@/resources/monsters/schemas/actions/sub/action.schema";
 import { Damage } from "@/resources/monsters/schemas/actions/sub/damage.schema";
-import { Save } from "@/resources/monsters/schemas/actions/sub/save.schema";
-import { Usage } from "@/resources/monsters/schemas/actions/sub/usage.schema";
 import { Challenge } from "@/resources/monsters/schemas/challenge/challenge.schema";
 import { Profile } from "@/resources/monsters/schemas/profile/profile.schema";
+import { MonsterDto } from "@/resources/monsters/dtos/content/monster.dto";
+import { MonsterTranslationDto } from "@/resources/monsters/dtos/content/monsterTranslation.dto";
+import { StatsDto } from "@/resources/monsters/dtos/content/stats/stats.dto";
+import { AbilityScoresDto } from "@/resources/monsters/dtos/content/stats/abilityScores/abilityScores.dto";
+import { SavingThrowsDto } from "@/resources/monsters/dtos/content/stats/savingThrows/savingThrows.dto";
+import { SpeedDto } from "@/resources/monsters/dtos/content/stats/speed/speed.dto";
+import { SkillsDto } from "@/resources/monsters/dtos/content/stats/skills/skills.dto";
+import { SenseDto } from "@/resources/monsters/dtos/content/stats/sens/sens.dto";
+import { AffinitiesDto } from "@/resources/monsters/dtos/content/affinities/affinities.dto";
+import { AbilityDto } from "@/resources/monsters/dtos/content/ability/ability.dto";
+import { SpellcastingDto } from "@/resources/monsters/dtos/content/spellCasting/spellCasting.dto";
+import { AppearanceDto } from "@/resources/monsters/dtos/content/appearance/appearance.dto";
+import { Appearance } from "@/resources/monsters/schemas/appearance/appearance.schema";
+import { Background } from "@/resources/monsters/schemas/background/background.schema";
+import { BackgroundDto } from "@/resources/monsters/dtos/content/background/background.dto";
+import { TreasureDto } from "@/resources/monsters/dtos/content/treasure/treasure.dto";
+import { Treasure } from "@/resources/monsters/schemas/treasure/treasure.schema";
+import { ConditionsDto } from "@/resources/monsters/dtos/content/conditions/conditions.dto";
+import { Conditions } from "@/resources/monsters/schemas/conditions/conditions.schema";
+import { ActionsDto } from "@/resources/monsters/dtos/content/actions/actions.dto";
+import { ActionDto } from "@/resources/monsters/dtos/content/actions/action/action.dto";
+import { DamageDto } from "@/resources/monsters/dtos/content/actions/action/damage.dto";
+import { DifficultyClassDto } from "@/resources/monsters/dtos/content/actions/action/dificultyClass.dto";
+import { DifficultyClass } from "@/resources/monsters/schemas/actions/sub/dificultyClass.schema";
+import { ChallengeDto } from "@/resources/monsters/dtos/content/challenge/challenge.dto";
+import { ProfileDto } from "@/resources/monsters/dtos/content/profile/profil.dto";
+import { AbilityTranslationDto } from "@/resources/monsters/dtos/content/ability/abilityTranslation.dto";
+import { ActionTranslationDto } from "@/resources/monsters/dtos/content/actions/action/actionTranslation.dto";
+import { SpellcastingTranslationDto } from "@/resources/monsters/dtos/content/spellCasting/spellCastingTranslation.dto";
 
 export class MonstersMapper extends DtoMapper<Monster> {
   /**
@@ -68,11 +70,15 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateMonsterContentDto source
    * @returns MonsterContent entity
    */
-  dtoMonsterContentToEntity(dto: CreateMonsterContentDto): MonsterContent {
+  dtoMonsterContentToEntity(dto: MonsterDto): MonsterContent {
     const monsterContent: MonsterContent = new MonsterContent();
 
     monsterContent.srd = false; // Par défaut true
-    monsterContent.name = dto.name;
+    monsterContent.firstname = dto.firstname;
+    monsterContent.lastname = dto.lastname;
+    monsterContent.surname = dto.surname;
+    monsterContent.avatar = dto.avatar;
+    monsterContent.hitPointsRoll = dto.hitPointsRoll;
 
     // Stats
     if (dto.stats) {
@@ -92,6 +98,22 @@ export class MonstersMapper extends DtoMapper<Monster> {
     // Spellcasting
     if (dto.spellcasting && dto.spellcasting.length > 0) {
       monsterContent.spellcasting = dto.spellcasting.map((spellcasting) => this.dtoSpellcastingToEntity(spellcasting));
+    }
+
+    if (dto.appearance) {
+      monsterContent.appearance = this.dtoAppearanceToEntity(dto.appearance);
+    }
+
+    if (dto.background) {
+      monsterContent.background = this.dtoBackgroundToEntity(dto.background);
+    }
+
+    if (dto.treasure) {
+      monsterContent.treasure = this.dtoTreasureToEntity(dto.treasure);
+    }
+
+    if (dto.conditions) {
+      monsterContent.conditions = this.dtoConditionsToEntity(dto.conditions);
     }
 
     // Actions
@@ -120,7 +142,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param original MonsterContent to copy numeric values from
    * @returns MonsterContent entity with merged values
    */
-  dtoTranslationToEntity(dto: CreateMonsterTranslationDto, original: MonsterContent): MonsterContent {
+  dtoTranslationToEntity(dto: MonsterTranslationDto, original: MonsterContent): MonsterContent {
     const monsterContent: MonsterContent = new MonsterContent();
 
     // Copy numeric values from original
@@ -129,7 +151,10 @@ export class MonstersMapper extends DtoMapper<Monster> {
     monsterContent.updatedAt = new Date();
 
     // Set translated name
-    monsterContent.name = dto.name;
+    monsterContent.firstname = dto.firstname;
+    monsterContent.lastname = dto.lastname;
+    monsterContent.surname = dto.surname;
+    monsterContent.avatar = original.avatar;
 
     // Stats: copy numeric values from original, apply translated languages
     if (original.stats) {
@@ -139,6 +164,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
       stats.currentHitPoints = original.stats.currentHitPoints;
       stats.tempHitPoints = original.stats.tempHitPoints;
       stats.armorClass = original.stats.armorClass;
+      stats.initiative = original.stats.initiative;
       stats.passivePerception = original.stats.passivePerception;
       stats.speed = original.stats.speed;
       stats.abilityScores = original.stats.abilityScores;
@@ -154,7 +180,11 @@ export class MonstersMapper extends DtoMapper<Monster> {
 
     // Affinities: copy entirely from original (not translatable)
     if (original.affinities) {
-      monsterContent.affinities = original.affinities;
+      const affinities = new Affinities();
+      affinities.resistances = dto.affinities?.resistances ?? original.affinities.resistances;
+      affinities.vulnerabilities = dto.affinities?.vulnerabilities ?? original.affinities.vulnerabilities;
+      affinities.immunities = dto.affinities?.immunities ?? original.affinities.immunities;
+      monsterContent.affinities = affinities;
     }
 
     // Abilities: merge translations with original order
@@ -176,38 +206,87 @@ export class MonstersMapper extends DtoMapper<Monster> {
 
     // Spellcasting: copy entirely from original (not translatable)
     if (original.spellcasting && original.spellcasting.length > 0) {
-      monsterContent.spellcasting = original.spellcasting;
+      monsterContent.spellcasting = original.spellcasting.map((originalSpellcasting, index) => {
+        const spellcasting = new Spellcasting();
+        spellcasting.className = dto.spellcasting?.[index]?.className ?? originalSpellcasting.className;
+        spellcasting.ability = dto.spellcasting?.[index]?.ability ?? originalSpellcasting.ability;
+        spellcasting.saveDC = originalSpellcasting.saveDC;
+        spellcasting.attackBonus = originalSpellcasting.attackBonus;
+        spellcasting.spellSlotsByLevel = originalSpellcasting.spellSlotsByLevel;
+        spellcasting.totalSlots = originalSpellcasting.totalSlots;
+        spellcasting.spells = originalSpellcasting.spells;
+        return spellcasting;
+      });
     }
+
+    if (original.appearance) {
+      const appearance = new Appearance();
+      appearance.age = original.appearance.age;
+      appearance.height = original.appearance.height;
+      appearance.weight = original.appearance.weight;
+      appearance.eyes = dto.appearance?.eyes ?? original.appearance.eyes;
+      appearance.skin = dto.appearance?.skin ?? original.appearance.skin;
+      appearance.hair = dto.appearance?.hair ?? original.appearance.hair;
+      appearance.description = dto.appearance?.description ?? original.appearance.description;
+      monsterContent.appearance = appearance;
+    }
+
+    if (original.background) {
+      const background = new Background();
+      background.personalityTraits = dto.background?.personalityTraits ?? original.background.personalityTraits;
+      background.ideals = dto.background?.ideals ?? original.background.ideals;
+      background.bonds = dto.background?.bonds ?? original.background.bonds;
+      background.flaws = dto.background?.flaws ?? original.background.flaws;
+      background.alliesAndOrgs = dto.background?.alliesAndOrgs ?? original.background.alliesAndOrgs;
+      background.backstory = dto.background?.backstory ?? original.background.backstory;
+      monsterContent.background = background;
+    }
+
+    if (original.treasure) {
+      const treasure = new Treasure();
+      treasure.cp = original.treasure.cp;
+      treasure.sp = original.treasure.sp;
+      treasure.ep = original.treasure.ep;
+      treasure.gp = original.treasure.gp;
+      treasure.pp = original.treasure.pp;
+      treasure.treasure = dto.treasure?.treasure ?? original.treasure.treasure;
+      treasure.equipment = dto.treasure?.equipment ?? original.treasure.equipment;
+      monsterContent.treasure = treasure;
+    }
+
+    monsterContent.conditions = original.conditions;
 
     // Actions: merge translated name/description with original numeric values
     if (original.actions) {
       const actions = new Actions();
-      actions.legendaryActionsPerDay = original.actions.legendaryActionsPerDay;
 
       // Helper function to merge action arrays
       const mergeActions = (
         originalActions: Action[],
-        translatedActions?: { name?: string; description?: string }[],
+        translatedActions?: ActionTranslationDto[],
       ): Action[] => {
         return originalActions.map((originalAction, index) => {
           const action = new Action();
           // Copy all numeric/game values from original
-          action.type = originalAction.type;
           action.attackBonus = originalAction.attackBonus;
-          action.damage = originalAction.damage;
-          action.range = originalAction.range;
-          action.save = originalAction.save;
-          action.usage = originalAction.usage;
-          action.legendaryActionCost = originalAction.legendaryActionCost;
+          action.cost = originalAction.cost;
+          action.dc.dcValue = originalAction.dc?.dcValue;
 
           // Apply translated name/description if provided
-          if (translatedActions && translatedActions[index]) {
-            action.name = translatedActions[index].name ?? originalAction.name;
-            action.description = translatedActions[index].description ?? originalAction.description;
-          } else {
-            action.name = originalAction.name;
-            action.description = originalAction.description;
+          action.name = translatedActions[index].name ?? originalAction.name;
+          action.type = translatedActions[index].type ?? originalAction.type;
+          action.description = translatedActions[index].description ?? originalAction.description;
+          action.range = originalAction.range;
+
+          action.dc.dcType = translatedActions[index].dc.dcType ?? originalAction.dc?.dcType;
+          action.dc.successType = translatedActions[index].dc.successType ?? originalAction.dc?.successType;
+
+          //update damage
+          for (let i = 0; i < action.damage.length; i++) {
+              action.damage[i].type = translatedActions[index].damage[i].type ?? originalAction.damage[i].type;
+              action.damage[i].dice = originalAction.damage[i].dice;
           }
+            
           return action;
         });
       };
@@ -215,25 +294,23 @@ export class MonstersMapper extends DtoMapper<Monster> {
       actions.standard = mergeActions(original.actions.standard ?? [], dto.actions?.standard);
       actions.legendary = mergeActions(original.actions.legendary ?? [], dto.actions?.legendary);
       actions.lair = mergeActions(original.actions.lair ?? [], dto.actions?.lair);
-      actions.reactions = mergeActions(original.actions.reactions ?? [], dto.actions?.reactions);
-      actions.bonus = mergeActions(original.actions.bonus ?? [], dto.actions?.bonus);
 
       monsterContent.actions = actions;
     }
 
     // Challenge: copy entirely from original (not translatable)
-    if (original.challenge) {
-      monsterContent.challenge = original.challenge;
-    }
+    monsterContent.challenge = original.challenge;
 
     // Profile: merge translated values with original
     if (original.profile) {
       const profile = new Profile();
       profile.type = dto.profile?.type ?? original.profile.type;
       profile.subtype = dto.profile?.subtype ?? original.profile.subtype;
-      profile.alignment = dto.profile?.alignment ?? original.profile.alignment;
+      profile.alignment = original.profile.alignment;
       monsterContent.profile = profile;
     }
+
+    monsterContent.hitPointsRoll = original.hitPointsRoll;
 
     return monsterContent;
   }
@@ -247,23 +324,24 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param existing Current MonsterContent to update
    * @returns Record of field paths and values to update in MongoDB
    */
-  updateTranslationEntity(dto: UpdateMonsterTranslationDto, existing: MonsterContent): Record<string, any> {
+  updateTranslationEntity(dto: MonsterTranslationDto, existing: MonsterContent): Record<string, any> {
     const updateFields: Record<string, any> = {};
 
     // Update name if provided
-    if (dto.name !== undefined) {
-      updateFields["name"] = dto.name;
-    }
+    updateFields["firstname"] = dto.firstname ?? existing.firstname;
+    updateFields["lastname"] = dto.lastname ?? existing.lastname;
+    updateFields["surname"] = dto.surname ?? existing.surname;
 
     // Stats: only languages can be updated (other values are numeric)
     if (dto.stats?.languages !== undefined) {
       // Create new stats object preserving all numeric values
       const stats = new Stats();
-      stats.size = existing.stats?.size ?? 0;
+      stats.size = existing.stats?.size ?? "Tiny";
       stats.maxHitPoints = existing.stats?.maxHitPoints ?? 0;
       stats.currentHitPoints = existing.stats?.currentHitPoints ?? 0;
       stats.tempHitPoints = existing.stats?.tempHitPoints ?? 0;
       stats.armorClass = existing.stats?.armorClass ?? 10;
+      stats.initiative = existing.stats?.initiative ?? 0;
       stats.passivePerception = existing.stats?.passivePerception ?? 0;
       stats.speed = existing.stats?.speed;
       stats.abilityScores = existing.stats?.abilityScores;
@@ -274,24 +352,77 @@ export class MonstersMapper extends DtoMapper<Monster> {
       updateFields["stats"] = stats;
     }
 
+    if (dto.affinities !== undefined) {
+      const affinities = new Affinities();
+      affinities.resistances = dto.affinities?.resistances ?? existing.affinities?.resistances;
+      affinities.vulnerabilities = dto.affinities?.vulnerabilities ?? existing.affinities?.vulnerabilities;
+      affinities.immunities = dto.affinities?.immunities ?? existing.affinities?.immunities;
+      updateFields["affinities"] = affinities;
+    }
+
     // Abilities: update name and description only
     if (dto.abilities !== undefined && existing.abilities && existing.abilities.length > 0) {
       updateFields["abilities"] = this.mergeAbilities(existing.abilities, dto.abilities);
     }
+
+    if (dto.spellcasting !== undefined && existing.spellcasting && existing.spellcasting.length > 0) {
+      updateFields["spellcasting"] = this.mergeSpellcasting(existing.spellcasting, dto.spellcasting);
+    }
+
+    if (dto.appearance !== undefined && existing.appearance) {
+      const appearance = new Appearance();
+      appearance.age = existing.appearance.age;
+      appearance.height = existing.appearance.height;
+      appearance.weight = existing.appearance.weight;
+      appearance.eyes = dto.appearance.eyes ?? existing.appearance.eyes;
+      appearance.skin = dto.appearance.skin ?? existing.appearance.skin;
+      appearance.hair = dto.appearance.hair ?? existing.appearance.hair;
+      appearance.description = dto.appearance.description ?? existing.appearance.description;
+      updateFields["appearance"] = appearance;
+    }
+
+    if (dto.background !== undefined && existing.background) {
+      const background = new Background();
+      background.personalityTraits = dto.background.personalityTraits ?? existing.background.personalityTraits;
+      background.ideals = dto.background.ideals ?? existing.background.ideals;
+      background.bonds = dto.background.bonds ?? existing.background.bonds;
+      background.flaws = dto.background.flaws ?? existing.background.flaws;
+      background.alliesAndOrgs = dto.background.alliesAndOrgs ?? existing.background.alliesAndOrgs;
+      background.backstory = dto.background.backstory ?? existing.background.backstory;
+      updateFields["background"] = background;
+    }
+
+    if (dto.treasure !== undefined && existing.treasure) {
+      const treasure = new Treasure();
+      treasure.cp = existing.treasure.cp;
+      treasure.sp = existing.treasure.sp;
+      treasure.ep = existing.treasure.ep;
+      treasure.gp = existing.treasure.gp;
+      treasure.pp = existing.treasure.pp;
+      treasure.treasure = dto.treasure.treasure ?? existing.treasure.treasure;
+      treasure.equipment = dto.treasure.equipment ?? existing.treasure.equipment;
+      updateFields["treasure"] = treasure;
+    }
+
+    updateFields["conditions"] = existing.conditions;
 
     // Actions: update name and description only, preserve numeric values
     if (dto.actions !== undefined && existing.actions) {
       updateFields["actions"] = this.mergeActionsForUpdate(existing.actions, dto.actions);
     }
 
+    updateFields["challenge"] = existing.challenge;
+
     // Profile: update textual fields only
     if (dto.profile !== undefined && existing.profile) {
       const profile = new Profile();
       profile.type = dto.profile.type ?? existing.profile.type;
       profile.subtype = dto.profile.subtype ?? existing.profile.subtype;
-      profile.alignment = dto.profile.alignment ?? existing.profile.alignment;
+      profile.alignment = existing.profile.alignment;
       updateFields["profile"] = profile;
     }
+
+    updateFields["hitPointsRoll"] = existing.hitPointsRoll;
 
     return updateFields;
   }
@@ -324,12 +455,9 @@ export class MonstersMapper extends DtoMapper<Monster> {
       standard?: ActionTranslationDto[];
       legendary?: ActionTranslationDto[];
       lair?: ActionTranslationDto[];
-      reactions?: ActionTranslationDto[];
-      bonus?: ActionTranslationDto[];
     },
   ): Actions {
     const actions = new Actions();
-    actions.legendaryActionsPerDay = existingActions.legendaryActionsPerDay;
 
     // Helper function to merge action arrays
     const mergeActionArray = (
@@ -340,22 +468,28 @@ export class MonstersMapper extends DtoMapper<Monster> {
       return existingArray.map((existingAction, index) => {
         const action = new Action();
         // Preserve all numeric/game values
-        action.type = existingAction.type;
         action.attackBonus = existingAction.attackBonus;
-        action.damage = existingAction.damage;
-        action.range = existingAction.range;
-        action.save = existingAction.save;
-        action.usage = existingAction.usage;
-        action.legendaryActionCost = existingAction.legendaryActionCost;
+        action.cost = existingAction.cost;
+
+        action.dc.dcValue = existingAction.dc?.dcValue;
 
         // Apply translations if provided
-        if (translatedArray && translatedArray[index]) {
-          action.name = translatedArray[index].name ?? existingAction.name;
-          action.description = translatedArray[index].description ?? existingAction.description;
-        } else {
-          action.name = existingAction.name;
-          action.description = existingAction.description;
+        action.name = translatedArray[index].name ?? existingAction.name;
+        action.description = translatedArray[index].description ?? existingAction.description;
+        action.type = translatedArray[index].type ?? existingAction.type;
+
+        action.range = existingAction.range;
+
+
+        action.dc.dcType = translatedArray[index].dc.dcType ?? existingAction.dc?.dcType;
+        action.dc.successType = translatedArray[index].dc.successType ?? existingAction.dc?.successType;
+
+        //update damage
+        for (let i = 0; i < action.damage.length; i++) {
+          action.damage[i].type = translatedArray[index].damage[i].type ?? existingAction.damage[i].type;
+          action.damage[i].dice = existingAction.damage[i].dice;
         }
+        
         return action;
       });
     };
@@ -363,10 +497,33 @@ export class MonstersMapper extends DtoMapper<Monster> {
     actions.standard = mergeActionArray(existingActions.standard, translatedActions.standard);
     actions.legendary = mergeActionArray(existingActions.legendary, translatedActions.legendary);
     actions.lair = mergeActionArray(existingActions.lair, translatedActions.lair);
-    actions.reactions = mergeActionArray(existingActions.reactions, translatedActions.reactions);
-    actions.bonus = mergeActionArray(existingActions.bonus, translatedActions.bonus);
 
     return actions;
+  }
+
+  private mergeSpellcasting(existingSpellcasting: Spellcasting[], translatedSpellcasting: SpellcastingTranslationDto[]): Spellcasting[] {
+  
+    return existingSpellcasting.map((existingSpellcasting, index) => {
+      const spellcasting = new Spellcasting();
+      if (translatedSpellcasting[index]) {
+        spellcasting.className = translatedSpellcasting[index].className ?? existingSpellcasting.className;
+        spellcasting.ability = translatedSpellcasting[index].ability ?? existingSpellcasting.ability;
+        spellcasting.saveDC = existingSpellcasting.saveDC;
+        spellcasting.attackBonus = existingSpellcasting.attackBonus;
+        spellcasting.spellSlotsByLevel = existingSpellcasting.spellSlotsByLevel;
+        spellcasting.totalSlots = existingSpellcasting.totalSlots;
+        spellcasting.spells = existingSpellcasting.spells;
+      } else {
+        spellcasting.className = existingSpellcasting.className;
+        spellcasting.ability = existingSpellcasting.ability;
+        spellcasting.saveDC = existingSpellcasting.saveDC;
+        spellcasting.attackBonus = existingSpellcasting.attackBonus;
+        spellcasting.spellSlotsByLevel = existingSpellcasting.spellSlotsByLevel;
+        spellcasting.totalSlots = existingSpellcasting.totalSlots;
+        spellcasting.spells = existingSpellcasting.spells;
+      }
+      return spellcasting;
+    });
   }
 
   /**
@@ -374,22 +531,18 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateStatsDto source
    * @returns Stats entity
    */
-  public dtoStatsToEntity(dto: CreateStatsDto): Stats {
+  public dtoStatsToEntity(dto: StatsDto): Stats {
     const stats: Stats = new Stats();
 
-    stats.size = dto.size ?? 0;
+    stats.size = dto.size ?? "Tiny";
     stats.maxHitPoints = dto.maxHitPoints ?? 0;
     stats.currentHitPoints = dto.currentHitPoints ?? dto.maxHitPoints ?? 0;
     stats.tempHitPoints = dto.tempHitPoints ?? 0;
     stats.armorClass = dto.armorClass ?? 10;
+    stats.initiative = dto.initiative ?? 0;
     stats.passivePerception = dto.passivePerception ?? 0;
     stats.languages = dto.languages ?? [];
-
-    // Speed
-    if (dto.speed) {
-      stats.speed = this.dtoSpeedToEntity(dto.speed);
-    }
-
+    
     // Ability Scores
     if (dto.abilityScores) {
       stats.abilityScores = this.dtoAbilityScoresToEntity(dto.abilityScores);
@@ -398,6 +551,11 @@ export class MonstersMapper extends DtoMapper<Monster> {
     // Saving Throws
     if (dto.savingThrows) {
       stats.savingThrows = this.dtoSavingThrowsToEntity(dto.savingThrows);
+    }
+
+    // Speed
+    if (dto.speed) {
+      stats.speed = this.dtoSpeedToEntity(dto.speed);
     }
 
     // Skills
@@ -418,7 +576,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateSpeedDto source
    * @returns Speed entity
    */
-  private dtoSpeedToEntity(dto: CreateSpeedDto): Speed {
+  private dtoSpeedToEntity(dto: SpeedDto): Speed {
     const speed: Speed = new Speed();
 
     speed.walk = dto.walk;
@@ -435,7 +593,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateAbilityScoresDto source
    * @returns AbilityScores entity
    */
-  private dtoAbilityScoresToEntity(dto: CreateAbilityScoresDto): AbilityScores {
+  private dtoAbilityScoresToEntity(dto: AbilityScoresDto): AbilityScores {
     const abilityScores: AbilityScores = new AbilityScores();
 
     abilityScores.strength = dto.strength ?? 10;
@@ -453,7 +611,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateSavingThrowsDto source
    * @returns SavingThrows entity
    */
-  private dtoSavingThrowsToEntity(dto: CreateSavingThrowsDto): SavingThrows {
+  private dtoSavingThrowsToEntity(dto: SavingThrowsDto): SavingThrows {
     const savingThrows: SavingThrows = new SavingThrows();
 
     savingThrows.strength = dto.strength ?? 0;
@@ -471,7 +629,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateSkillsDto source
    * @returns Skills entity
    */
-  private dtoSkillsToEntity(dto: CreateSkillsDto): Skills {
+  private dtoSkillsToEntity(dto: SkillsDto): Skills {
     const skills: Skills = new Skills();
 
     skills.athletics = dto.athletics ?? 0;
@@ -501,7 +659,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateSenseDto source
    * @returns Sense entity
    */
-  private dtoSenseToEntity(dto: CreateSenseDto): Sense {
+  private dtoSenseToEntity(dto: SenseDto): Sense {
     const sense: Sense = new Sense();
 
     sense.name = dto.name;
@@ -515,13 +673,12 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateAffinitiesDto source
    * @returns Affinities entity
    */
-  public dtoAffinitiesToEntity(dto: CreateAffinitiesDto): Affinities {
+  public dtoAffinitiesToEntity(dto: AffinitiesDto): Affinities {
     const affinities: Affinities = new Affinities();
 
     affinities.resistances = dto.resistances ?? [];
     affinities.immunities = dto.immunities ?? [];
     affinities.vulnerabilities = dto.vulnerabilities ?? [];
-    affinities.conditionImmunities = dto.conditionImmunities ?? [];
 
     return affinities;
   }
@@ -531,7 +688,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateAbilityDto source
    * @returns Ability entity
    */
-  public dtoAbilityToEntity(dto: CreateAbilityDto): Ability {
+  public dtoAbilityToEntity(dto: AbilityDto): Ability {
     const ability: Ability = new Ability();
 
     ability.name = dto.name;
@@ -540,14 +697,77 @@ export class MonstersMapper extends DtoMapper<Monster> {
     return ability;
   }
 
+  public dtoAppearanceToEntity(dto: AppearanceDto): Appearance {
+    const appearance: Appearance = new Appearance();
+
+    appearance.age = dto.age;
+    appearance.height = dto.height;
+    appearance.weight = dto.weight;
+    appearance.eyes = dto.eyes;
+    appearance.skin = dto.skin;
+    appearance.hair = dto.hair;
+    appearance.description = dto.description;
+
+    return appearance;
+  }
+
+  public dtoBackgroundToEntity(dto: BackgroundDto): Background {
+    const background: Background = new Background();
+
+    background.personalityTraits = dto.personalityTraits;
+    background.ideals = dto.ideals;
+    background.bonds = dto.bonds;
+    background.flaws = dto.flaws;
+    background.alliesAndOrgs = dto.alliesAndOrgs;
+    background.backstory = dto.backstory;
+
+    return background;
+  }
+
+  public dtoTreasureToEntity(dto: TreasureDto): Treasure {
+    const treasure: Treasure = new Treasure();
+
+    treasure.cp = dto.cp ?? 0;
+    treasure.sp = dto.sp ?? 0;
+    treasure.ep = dto.ep ?? 0;
+    treasure.gp = dto.gp ?? 0;
+    treasure.pp = dto.pp ?? 0;
+    treasure.treasure = dto.treasure;
+    treasure.equipment = dto.equipment;
+
+    return treasure;
+  }
+
+  public dtoConditionsToEntity(dto: ConditionsDto): Conditions {
+    const conditions: Conditions = new Conditions();
+
+    conditions.blinded = dto.blinded ?? false;
+    conditions.charmed = dto.charmed ?? false;
+    conditions.deafened = dto.deafened ?? false;
+    conditions.frightened = dto.frightened ?? false;
+    conditions.grappled = dto.grappled ?? false;
+    conditions.incapacitated = dto.incapacitated ?? false;
+    conditions.invisible = dto.invisible ?? false;
+    conditions.paralyzed = dto.paralyzed ?? false;
+    conditions.petrified = dto.petrified ?? false;
+    conditions.poisoned = dto.poisoned ?? false;
+    conditions.prone = dto.prone ?? false;
+    conditions.restrained = dto.restrained ?? false;
+    conditions.stunned = dto.stunned ?? false;
+    conditions.unconscious = dto.unconscious ?? false;
+
+    return conditions;
+  }
+
   /**
    * Convert CreateSpellcastingDto to Spellcasting entity
    * @param dto CreateSpellcastingDto source
    * @returns Spellcasting entity
    */
-  public dtoSpellcastingToEntity(dto: CreateSpellcastingDto): Spellcasting {
+  public dtoSpellcastingToEntity(dto: SpellcastingDto): Spellcasting {
     const spellcasting: Spellcasting = new Spellcasting();
 
+    spellcasting.className = dto.className
     spellcasting.ability = dto.ability;
     spellcasting.saveDC = dto.saveDC;
     spellcasting.attackBonus = dto.attackBonus ?? 0;
@@ -565,8 +785,8 @@ export class MonstersMapper extends DtoMapper<Monster> {
         spellcasting.spellSlotsByLevel = dto.spellSlotsByLevel;
       } else {
         // Convert Record to Map
-        spellcasting.spellSlotsByLevel = new Map(
-          Object.entries(dto.spellSlotsByLevel).map(([key, value]) => [key, value]),
+        spellcasting.spellSlotsByLevel = new Map<number, { total?: number; used?: number }>(
+          Object.entries(dto.spellSlotsByLevel).map(([key, value]) => [Number(key), value]),
         );
       }
     }
@@ -579,15 +799,12 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateActionsDto source
    * @returns Actions entity
    */
-  public dtoActionsToEntity(dto: CreateActionsDto): Actions {
+  public dtoActionsToEntity(dto: ActionsDto): Actions {
     const actions: Actions = new Actions();
 
     actions.standard = dto.standard?.map((action) => this.dtoActionToEntity(action)) ?? [];
     actions.legendary = dto.legendary?.map((action) => this.dtoActionToEntity(action)) ?? [];
-    actions.legendaryActionsPerDay = dto.legendaryActionsPerDay;
     actions.lair = dto.lair?.map((action) => this.dtoActionToEntity(action)) ?? [];
-    actions.reactions = dto.reactions?.map((action) => this.dtoActionToEntity(action)) ?? [];
-    actions.bonus = dto.bonus?.map((action) => this.dtoActionToEntity(action)) ?? [];
 
     return actions;
   }
@@ -597,29 +814,23 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateActionDto source
    * @returns Action entity
    */
-  private dtoActionToEntity(dto: CreateActionDto): Action {
+  private dtoActionToEntity(dto: ActionDto): Action {
     const action: Action = new Action();
 
     action.name = dto.name;
     action.type = dto.type;
+    action.description = dto.description;
     action.attackBonus = dto.attackBonus;
     action.range = dto.range;
-    action.description = dto.description;
-    action.legendaryActionCost = dto.legendaryActionCost;
+    action.cost = dto.cost;
 
     // Damage
-    if (dto.damage) {
-      action.damage = this.dtoDamageToEntity(dto.damage);
+    if (dto.damage && dto.damage.length > 0) {
+      action.damage = dto.damage.map((damage) => this.dtoDamageToEntity(damage));
     }
 
-    // Save
-    if (dto.save) {
-      action.save = this.dtoSaveToEntity(dto.save);
-    }
-
-    // Usage
-    if (dto.usage) {
-      action.usage = this.dtoUsageToEntity(dto.usage);
+    if (dto.dc) {
+      action.dc = this.dtoDifficultyClassToEntity(dto.dc);
     }
 
     return action;
@@ -630,7 +841,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateDamageDto source
    * @returns Damage entity
    */
-  private dtoDamageToEntity(dto: CreateDamageDto): Damage {
+  private dtoDamageToEntity(dto: DamageDto): Damage {
     const damage: Damage = new Damage();
 
     damage.dice = dto.dice;
@@ -639,35 +850,15 @@ export class MonstersMapper extends DtoMapper<Monster> {
     return damage;
   }
 
-  /**
-   * Convert CreateSaveDto to Save entity
-   * @param dto CreateSaveDto source
-   * @returns Save entity
-   */
-  private dtoSaveToEntity(dto: CreateSaveDto): Save {
-    const save: Save = new Save();
+  private dtoDifficultyClassToEntity(dto: DifficultyClassDto): DifficultyClass {
+    const dc: DifficultyClass = new DifficultyClass();
 
-    save.type = dto.type;
-    save.dc = dto.dc;
-    save.successType = dto.successType;
+    dc.dcType = dto.dcType;
+    dc.dcValue = dto.dcValue;
+    dc.successType = dto.successType;
 
-    return save;
-  }
-
-  /**
-   * Convert CreateUsageDto to Usage entity
-   * @param dto CreateUsageDto source
-   * @returns Usage entity
-   */
-  private dtoUsageToEntity(dto: CreateUsageDto): Usage {
-    const usage: Usage = new Usage();
-
-    usage.type = dto.type;
-    usage.times = dto.times;
-    usage.dice = dto.dice;
-    usage.minValue = dto.minValue;
-
-    return usage;
+    return dc;
+  
   }
 
   /**
@@ -675,7 +866,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateChallengeDto source
    * @returns Challenge entity
    */
-  public dtoChallengeToEntity(dto: CreateChallengeDto): Challenge {
+  public dtoChallengeToEntity(dto: ChallengeDto): Challenge {
     const challenge: Challenge = new Challenge();
 
     challenge.challengeRating = dto.challengeRating;
@@ -689,7 +880,7 @@ export class MonstersMapper extends DtoMapper<Monster> {
    * @param dto CreateProfileDto source
    * @returns Profile entity
    */
-  public dtoProfileToEntity(dto: CreateProfileDto): Profile {
+  public dtoProfileToEntity(dto: ProfileDto): Profile {
     const profile: Profile = new Profile();
 
     profile.type = dto.type;

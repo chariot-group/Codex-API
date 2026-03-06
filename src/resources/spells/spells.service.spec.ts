@@ -1,5 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { SpellsService } from "./spells.service";
+import { SpellsService } from "@/resources/spells/spells.service";
 import { getModelToken } from "@nestjs/mongoose";
 import { Spell } from "@/resources/spells/schemas/spell.schema";
 import {

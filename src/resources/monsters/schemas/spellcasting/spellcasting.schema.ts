@@ -6,6 +6,11 @@ import { SpellFormattedDto } from "@/common/dtos/spell-formatted.dto";
 
 @Schema({ _id: false })
 export class Spellcasting {
+
+  @ApiProperty({ example: 'Wizard' })
+  @Prop()
+  className?: string;
+
   @ApiProperty({ example: "Intelligence", required: false, description: "Spellcasting ability" })
   @Prop()
   ability?: string;
@@ -37,7 +42,7 @@ export class Spellcasting {
       { _id: false },
     ),
   })
-  spellSlotsByLevel?: Map<string, { total?: number; used?: number }>;
+  spellSlotsByLevel?: Map<number, { total?: number; used?: number }>;
 
   @ApiProperty({ example: 14, default: 0, description: "Total spell slots available" })
   @Prop({ default: 0 })
