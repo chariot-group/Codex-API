@@ -6,13 +6,18 @@ import { SavingThrows } from "@/resources/monsters/schemas/stats/sub/savingThrow
 import { Skills } from "@/resources/monsters/schemas/stats/sub/skill.schema";
 import { Sense } from "@/resources/monsters/schemas/stats/sub/sense";
 import { ApiExtraModels, ApiProperty } from "@nestjs/swagger";
+import { Size, SIZES } from "@/resources/monsters/constants/sizes.constant";
 
 @ApiExtraModels(Speed, AbilityScores, SavingThrows, Skills, Sense)
 @Schema({ _id: false })
 export class Stats {
-  @ApiProperty({ example: 3 })
-  @Prop({ default: 0 })
-  size: number;
+  @ApiProperty({ example: 'Medium' })
+  @Prop({
+    type: String,
+    required: true,
+    enum: SIZES,
+  })
+  size: Size;
 
   @ApiProperty({ example: 100 })
   @Prop({ default: 0 })
@@ -33,6 +38,10 @@ export class Stats {
   @ApiProperty({ example: 15 })
   @Prop({ default: 10 })
   armorClass: number;
+
+  @ApiProperty({ example: 3 })
+  @Prop({ default: 0 })
+  initiative: number;
 
   @ApiProperty({ type: () => Speed })
   @Prop({ type: Speed, default: {} })

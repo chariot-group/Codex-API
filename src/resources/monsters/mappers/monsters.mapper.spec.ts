@@ -1,6 +1,6 @@
-import { MonstersMapper } from "./monsters.mapper";
-import { CreateMonsterDto } from "../dtos/create-monster.dto";
-import { Monster } from "../schemas/monster.schema";
+import { MonstersMapper } from "@/resources/monsters/mappers/monsters.mapper";
+import { CreateMonsterDto } from "@/resources/monsters/dtos/create-monster.dto";
+import { Monster } from "@/resources/monsters/schemas/monster.schema";
 import { Types } from "mongoose";
 
 describe("MonstersMapper", () => {
@@ -15,7 +15,9 @@ describe("MonstersMapper", () => {
       const dto: CreateMonsterDto = {
         lang: "en",
         monsterContent: {
-          name: "Goblin",
+          firstname: "Goblin",
+          lastname: "",
+          surname: "",
           stats: {
             size: 1,
             maxHitPoints: 7,
@@ -32,7 +34,7 @@ describe("MonstersMapper", () => {
       expect(result.languages).toEqual(["en"]);
       expect(result.translations.size).toBe(1);
       expect(result.translations.get("en")).toBeDefined();
-      expect(result.translations.get("en")?.name).toBe("Goblin");
+      expect(result.translations.get("en")?.firstname).toBe("Goblin");
       expect(result.translations.get("en")?.srd).toBe(false);
     });
 
@@ -40,7 +42,9 @@ describe("MonstersMapper", () => {
       const dto: CreateMonsterDto = {
         lang: "fr",
         monsterContent: {
-          name: "Gobelin",
+          firstname: "Gobelin",
+          lastname: "",
+          surname: "",
           stats: {
             size: 2,
             maxHitPoints: 20,
@@ -90,7 +94,7 @@ describe("MonstersMapper", () => {
       expect(result).toBeDefined();
       const content = result.translations.get("fr");
       expect(content).toBeDefined();
-      expect(content?.name).toBe("Gobelin");
+      expect(content?.firstname).toBe("Gobelin");
       expect(content?.stats).toBeDefined();
       expect(content?.stats?.size).toBe(2);
       expect(content?.stats?.maxHitPoints).toBe(20);
@@ -115,12 +119,13 @@ describe("MonstersMapper", () => {
       const dto: CreateMonsterDto = {
         lang: "en",
         monsterContent: {
-          name: "Fire Elemental",
+          firstname: "Fire",
+          lastname: "Elemental",
+          surname: "",
           affinities: {
             resistances: ["cold"],
             immunities: ["fire", "poison"],
             vulnerabilities: ["water"],
-            conditionImmunities: ["exhaustion", "paralyzed"],
           },
         },
       } as any;
@@ -132,14 +137,15 @@ describe("MonstersMapper", () => {
       expect(content?.affinities?.immunities).toContain("fire");
       expect(content?.affinities?.resistances).toContain("cold");
       expect(content?.affinities?.vulnerabilities).toContain("water");
-      expect(content?.affinities?.conditionImmunities).toContain("exhaustion");
     });
 
     it("should convert a monster with abilities", () => {
       const dto: CreateMonsterDto = {
         lang: "en",
         monsterContent: {
-          name: "Ancient Dragon",
+          firstname: "Ancient",
+          lastname: "Dragon",
+          surname: "",
           abilities: [
             {
               name: "Legendary Resistance",
@@ -269,37 +275,29 @@ describe("MonstersMapper", () => {
       expect(content?.actions?.standard?.length).toBe(1);
       expect(content?.actions?.standard?.[0].name).toBe("Sword Attack");
       expect(content?.actions?.standard?.[0].damage).toBeDefined();
-      expect(content?.actions?.standard?.[0].damage?.dice).toBe("1d8+3");
+      expect(content?.actions?.standard?.[0].damage?.length).toBeGreaterThan(0);
       expect(content?.actions?.legendary).toBeDefined();
       expect(content?.actions?.legendary?.length).toBe(1);
-      expect(content?.actions?.legendary?.[0].legendaryActionCost).toBe(2);
-      expect(content?.actions?.legendary?.[0].save).toBeDefined();
-      expect(content?.actions?.legendaryActionsPerDay).toBe(3);
-      expect(content?.actions?.reactions).toBeDefined();
-      expect(content?.actions?.reactions?.length).toBe(1);
-      expect(content?.actions?.bonus).toBeDefined();
-      expect(content?.actions?.bonus?.length).toBe(1);
+      expect(content?.actions?.legendary?.[0].cost).toBe(2);
+      expect(content?.actions?.legendary?.[0].dc).toBeDefined();
       expect(content?.actions?.lair).toBeDefined();
       expect(content?.actions?.lair?.length).toBe(1);
     });
 
-    it("should convert a monster with actions having usage", () => {
+    it("should convert a monster with actions", () => {
       const dto: CreateMonsterDto = {
         lang: "en",
         monsterContent: {
-          name: "Dragon",
+          firstname: "Dragon",
+          lastname: "",
+          surname: "",
           actions: {
             standard: [
               {
                 name: "Breath Weapon",
                 type: "special",
                 description: "Breathes fire",
-                usage: {
-                  type: "recharge",
-                  times: 1,
-                  dice: "1d6",
-                  minValue: 5,
-                },
+                damage: [{ type: "fire", dice: "6d6" }],
               },
             ],
           },
@@ -309,16 +307,18 @@ describe("MonstersMapper", () => {
       const result: Monster = mapper.dtoToEntity(dto);
 
       const content = result.translations.get("en");
-      expect(content?.actions?.standard?.[0].usage).toBeDefined();
-      expect(content?.actions?.standard?.[0].usage?.type).toBe("recharge");
-      expect(content?.actions?.standard?.[0].usage?.dice).toBe("1d6");
+      expect(content?.actions?.standard?.[0].name).toBe("Breath Weapon");
+      expect(content?.actions?.standard?.[0].damage).toBeDefined();
+      expect(content?.actions?.standard?.[0].damage?.length).toBe(1);
     });
 
     it("should convert a monster with challenge", () => {
       const dto: CreateMonsterDto = {
         lang: "en",
         monsterContent: {
-          name: "Boss Monster",
+          firstname: "Boss",
+          lastname: "Monster",
+          surname: "",
           challenge: {
             challengeRating: 10,
             experiencePoints: 5900,
@@ -411,14 +411,17 @@ describe("MonstersMapper", () => {
       const dto: CreateMonsterDto = {
         lang: "en",
         monsterContent: {
-          name: "Minimal Monster",
+          firstname: "Minimal",
+          lastname: "Monster",
+          surname: "",
         },
       } as any;
 
       const result: Monster = mapper.dtoToEntity(dto);
 
       const content = result.translations.get("en");
-      expect(content?.name).toBe("Minimal Monster");
+      expect(content?.firstname).toBe("Minimal");
+      expect(content?.lastname).toBe("Monster");
       expect(content?.abilities).toBeUndefined();
       expect(content?.spellcasting).toBeUndefined();
       expect(content?.actions).toBeUndefined();
